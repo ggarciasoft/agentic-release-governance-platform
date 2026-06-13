@@ -65,8 +65,9 @@ For MVP, delete should be soft delete.
 
 ## 3. Release Data Endpoints
 
-The Copilot-first MVP is **agent-driven**: Copilot agents collect Azure DevOps data through
-the `azure-devops` MCP server and then persist it through the `release-governance` MCP tools.
+The MVP is **agent-driven**: agents (in any MCP host — Copilot, Cursor, or Claude) collect
+Azure DevOps data through the `azure-devops` MCP server and then persist it through the
+`release-governance` MCP tools.
 These attach endpoints back the MCP `attach_*` tools one-to-one and are the primary path for
 the MVP. They receive already-collected data; they do not call Azure DevOps themselves.
 
@@ -111,8 +112,8 @@ GET /api/releases/{releaseId}/package
 ### Backend-Driven Analysis (optional / future)
 
 For a server-side workflow (for example a future web UI that triggers collection on the
-backend instead of through Copilot agents), the API may also expose server-driven analysis
-endpoints. These are **not required for the Copilot-first MVP**.
+backend instead of through host agents), the API may also expose server-driven analysis
+endpoints. These are **not required for the MCP-first MVP**.
 
 ```http
 POST /api/releases/{releaseId}/analyze

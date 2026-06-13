@@ -1,14 +1,17 @@
-# Copilot Agent API Flow
+# Agent API Flow
 
 ## Purpose
 
-This document shows how Copilot agents, MCP tools, backend APIs, and Azure DevOps APIs work together.
+This document shows how agents (in any MCP host — Copilot, Cursor, or Claude), MCP tools,
+backend APIs, and Azure DevOps APIs work together. The flow is identical regardless of host;
+only the agent definition format differs (see
+[Agent Hosts Overview](../hosts/agent-hosts-overview.md)).
 
 ## Main Flow
 
 ```text
-User in Copilot
-  -> release-orchestrator.agent.md
+User in an MCP host (Copilot | Cursor | Claude)
+  -> release-orchestrator (host-native agent definition)
   -> release-governance/create_release_item
   -> azure-devops/search work items
   -> release-governance/attach_work_items_to_release
@@ -19,7 +22,7 @@ User in Copilot
   -> release-governance/find_rollback_candidates
   -> release-governance/validate_release
   -> release-governance/generate_release_package
-  -> release-document-agent
+  -> release-document agent
   -> release-governance/save_release_document
 ```
 

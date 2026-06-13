@@ -1,21 +1,25 @@
-# Copilot-First MVP Roadmap
+# MCP-First MVP Roadmap
 
 ## Objective
 
-Build the first version of the AI Release Assistant so it can be operated from GitHub Copilot using custom agents and MCP tools.
+Build the first version of the AI Release Assistant so it can be operated from any
+MCP-compatible host (GitHub Copilot, Cursor, or Claude) using host-native agent definitions
+and shared MCP tools.
 
 ## Phase 1: Repository Setup
 
 Deliverables:
 
-- `.github/copilot-instructions.md`
-- `.github/agents/*.agent.md`
-- `.github/prompts/*.prompt.md`
-- Documentation for Copilot and MCP usage
+- Host instructions: `.github/copilot-instructions.md`, `CLAUDE.md`,
+  `.cursor/rules/release-assistant.mdc`
+- Host agent definitions: `.github/agents/*.agent.md`, `.cursor/rules/*.mdc`,
+  `.claude/agents/*.md`
+- MCP config per host: VS Code `mcp.json`, `.cursor/mcp.json`, `.mcp.json`
+- Host setup guides under `docs/hosts/`
 
 Acceptance criteria:
 
-- Copilot can detect the custom agents in the workspace.
+- At least one host can detect the agents in the workspace; parity exists for all three.
 - Agents have clear role instructions and tool constraints.
 
 ## Phase 2: Release Governance Backend
@@ -52,7 +56,7 @@ Deliverables:
 
 Acceptance criteria:
 
-- Copilot agents can call the MCP tools.
+- Agents in any host can call the MCP tools.
 - Tools return structured success/warning/error payloads.
 
 ## Phase 4: Azure DevOps Data Collection
@@ -78,7 +82,7 @@ Deliverables:
 
 Acceptance criteria:
 
-- Copilot can generate a release document from a releaseId.
+- An agent can generate a release document from a releaseId.
 - Missing deployment/rollback data is clearly shown.
 
 ## Phase 6: Review and Hardening

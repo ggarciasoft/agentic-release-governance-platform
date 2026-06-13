@@ -1,6 +1,6 @@
 # Rollback Agent
 
-> Topology note: in the Copilot-first MVP there is **no separate rollback Copilot agent**.
+> Topology note: in the MVP there is **no separate rollback agent** in any host.
 > Rollback discovery is performed by the [Pipeline Agent](pipeline-agent.md) (and the MVP
 > [Azure DevOps Analysis Agent](azure-devops-analysis-agent.md)) via the
 > `release-governance/find_rollback_candidates` tool. This document defines the rollback

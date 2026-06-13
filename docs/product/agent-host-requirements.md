@@ -1,8 +1,10 @@
-# Updated Requirements: Copilot-Callable Agents with MCP Tools
+# Requirements: MCP Agents Across Hosts
 
 ## Requirement Summary
 
-The system must provide AI agents that can be called from GitHub Copilot. These agents must use MCP tools, either existing or custom, to perform the release workflow.
+The system must provide AI agents that can be called from any MCP-compatible host
+(GitHub Copilot, Cursor, Claude, or another MCP client). These agents must use MCP tools,
+either existing or custom, to perform the release workflow. No single AI vendor is required.
 
 ## Required Capabilities
 
@@ -21,18 +23,24 @@ The agents must be able to:
 
 ## Primary Interaction
 
-A user should be able to use Copilot like this:
+A user should be able to invoke the orchestrator from their host of choice, for example:
 
 ```text
-@release-orchestrator Create a release for CR-12345, analyze Azure DevOps, validate readiness, and generate the release document.
+Use the release-orchestrator to create a release for CR-12345, analyze Azure DevOps,
+validate readiness, and generate the release document.
 ```
+
+The exact invocation syntax depends on the host (see
+[Agent Hosts Overview](../hosts/agent-hosts-overview.md)), but the behavior is identical.
 
 ## MVP Acceptance Criteria
 
 The MVP is complete when:
 
-- The repository contains Copilot custom agent files.
-- The repository contains Copilot instructions.
+- The repository contains agent definitions for at least one host, with parity available for
+  Copilot (`.github/agents`), Cursor (`.cursor/rules`), and Claude (`.claude/agents`).
+- The repository contains host instructions (`copilot-instructions.md`, `CLAUDE.md`,
+  `.cursor/rules/release-assistant.mdc`).
 - The Release Governance MCP exposes the required tools.
 - The agents can create a release item through MCP.
 - The agents can retrieve or receive Azure DevOps work item data.
@@ -54,4 +62,6 @@ The MVP is complete when:
 
 ## Safety Requirement
 
-Copilot agents must operate in a controlled way. Any action that changes production state must require explicit human confirmation and must be supported by permissions and audit logging.
+Agents must operate in a controlled way regardless of host. Any action that changes
+production state must require explicit human confirmation and must be supported by
+permissions and audit logging.

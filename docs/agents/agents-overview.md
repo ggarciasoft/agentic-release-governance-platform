@@ -8,8 +8,9 @@ Each agent has a single responsibility and returns structured output.
 
 ## 2. MVP Agents
 
-For the first version, implement these four agents (each has a spec under `docs/agents/`
-and a Copilot agent file under `.github/agents/`):
+For the first version, implement these four agents. Each has a host-neutral spec under
+`docs/agents/` and host-native definitions for every supported host (`.github/agents/`,
+`.cursor/rules/`, `.claude/agents/` — see [Agent Hosts Overview](../hosts/agent-hosts-overview.md)):
 
 1. [Release Orchestrator Agent](release-orchestrator-agent.md)
 2. [Azure DevOps Analysis Agent](azure-devops-analysis-agent.md) — all-in-one collector
@@ -35,7 +36,7 @@ For the mature version, the all-in-one collector is split into specialized agent
 10. Compliance Agent — *future, not yet specified*
 
 The Monitoring and Compliance agents are planned future capabilities. They do not yet have
-agent specs or Copilot agent files; their intended scope is described in
+agent specs or host-native definitions; their intended scope is described in
 [`../roadmap/future-roadmap.md`](../roadmap/future-roadmap.md) (post-deployment monitoring
 and compliance/audit reporting).
 

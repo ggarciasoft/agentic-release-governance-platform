@@ -123,11 +123,13 @@ These can be added later with strict permissions.
 
 ---
 
-# Copilot-Callable MCP Update
+# Agent-Host MCP Update
 
-The MCP strategy must support GitHub Copilot custom agents.
+The MCP strategy must support agents in any MCP-compatible host (GitHub Copilot, Cursor,
+Claude, or another MCP client). The same servers and tools serve every host; see
+[Agent Hosts Overview](../hosts/agent-hosts-overview.md).
 
-## Required MCP Servers for Copilot
+## Required MCP Servers (All Hosts)
 
 1. `azure-devops` MCP server for raw Azure DevOps data.
 2. `release-governance` MCP server for company-specific release workflow.

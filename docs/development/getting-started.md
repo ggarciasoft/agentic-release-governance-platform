@@ -3,24 +3,25 @@
 This guide explains how to set up a local development environment and the order in which to
 build and run the AI Release Assistant.
 
-> Project status: the repository currently contains the **specification and Copilot agent
-> definitions** (`docs/` and `.github/`). The backend solution, MCP server, and database
-> described below are built by following the
-> [Copilot-First MVP Roadmap](../roadmap/copilot-first-mvp-roadmap.md). The steps in this
-> guide are the target developer workflow once each piece exists.
+> Project status: the repository contains the **specification and host agent definitions**
+> (`docs/`, `.github/`, `.cursor/`, `.claude/`, `CLAUDE.md`). The backend solution, MCP
+> server, and database described below are built by following the
+> [MCP-First MVP Roadmap](../roadmap/mcp-first-mvp-roadmap.md). The steps in this guide are
+> the target developer workflow once each piece exists.
 
 ## 1. Prerequisites
 
-- **.NET 8 SDK** (the documented backend target; align with `global.json` once added).
-- **Node.js LTS** — only if/when the optional web UI is built. Not required for the
-  Copilot-first MVP.
-- **PostgreSQL** or **SQL Server** — local instance or container.
-- **Git** and a **GitHub Copilot**-enabled editor (for example VS Code with Copilot Chat
-  Agent mode).
+- **.NET SDK** (align with `global.json`).
+- **Node.js LTS** — required for the `azure-devops` MCP server (run via `npx`) and the
+  optional web UI.
+- **PostgreSQL** or **SQL Server** — local instance or container (SQLite works for quick
+  local dev).
+- **Git** and an **MCP-compatible agent host** — GitHub Copilot (VS Code), Cursor, or Claude
+  (Claude Code / Claude Desktop). See [Agent Hosts Overview](../hosts/agent-hosts-overview.md).
 - An **Azure DevOps** organization/project with a **Personal Access Token (PAT)** scoped for
   read access to Work Items, Code (PRs), Build, and Release.
-- The **`azure-devops` MCP server** available to Copilot (see
-  [MCP Configuration for Copilot](../copilot/mcp-configuration-for-copilot.md)).
+- The **`azure-devops` MCP server** available to your host (registered alongside
+  `release-governance`).
 
 ## 2. Clone and Explore
 
@@ -100,18 +101,21 @@ The `release-governance` MCP server is a thin adapter over the application servi
 dotnet run --project src/ReleaseAssistant.McpServer
 ```
 
-## 7. Wire Up Copilot
+## 7. Connect an Agent Host
 
-Register both MCP servers (`azure-devops` and `release-governance`) with your Copilot host
-following [MCP Configuration for Copilot](../copilot/mcp-configuration-for-copilot.md). The
-custom agents in `.github/agents/` are detected automatically by Copilot in the workspace.
+Register both MCP servers (`azure-devops` and `release-governance`) with your chosen host,
+then use the host's agent definitions (already in the repo). Follow the matching guide:
 
-Verify the setup with a prompt such as:
+- [GitHub Copilot](../hosts/github-copilot.md) — VS Code `mcp.json`; agents in `.github/agents/`.
+- [Cursor](../hosts/cursor.md) — `.cursor/mcp.json`; rules in `.cursor/rules/`.
+- [Claude](../hosts/claude.md) — `.mcp.json` + `CLAUDE.md`; subagents in `.claude/agents/`.
+
+Verify the setup with a prompt such as (syntax varies by host):
 
 ```text
-@release-orchestrator Create a release for CR-12345 in Production, collect the related work
-items, PRs, deployments, and rollback candidates, validate readiness, and generate the
-release document.
+Use the release-orchestrator to create a release for CR-12345 in Production, collect the
+related work items, PRs, deployments, and rollback candidates, validate readiness, and
+generate the release document.
 ```
 
 ## 8. Run Tests
@@ -124,9 +128,9 @@ dotnet test
 
 ## 9. Recommended Build Order
 
-Follow the [Copilot-First MVP Roadmap](../roadmap/copilot-first-mvp-roadmap.md):
+Follow the [MCP-First MVP Roadmap](../roadmap/mcp-first-mvp-roadmap.md):
 
-1. Repository setup (Copilot instructions, agents, prompts) — already present.
+1. Repository setup (host instructions, agents, prompts) — already present.
 2. Release Governance backend (entities and models).
 3. Release Governance MCP server (10 canonical tools).
 4. Azure DevOps data collection.
@@ -135,8 +139,9 @@ Follow the [Copilot-First MVP Roadmap](../roadmap/copilot-first-mvp-roadmap.md):
 
 ## 10. Troubleshooting
 
-- **Copilot does not see the agents** — ensure the workspace root contains `.github/agents/`
-  and the editor has Copilot Agent mode enabled.
+- **Host does not see the agents** — ensure the workspace root contains the host's agent
+  folder (`.github/agents/`, `.cursor/rules/`, or `.claude/agents/`) and the host's agent
+  mode is enabled.
 - **MCP tools fail** — confirm the `release-governance` MCP server is running and registered,
   and that tool names match [`mcp-tool-contracts.md`](../mcp/mcp-tool-contracts.md).
 - **Azure DevOps 401/403** — verify the PAT scopes and that it is configured as a secret.

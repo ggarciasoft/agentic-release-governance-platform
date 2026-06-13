@@ -1,0 +1,53 @@
+---
+description: Core conventions and safety rules for the AI Release Assistant (always applied).
+alwaysApply: true
+---
+
+# AI Release Assistant — Project Rules
+
+This repository is an MCP-first, agent-host-agnostic release assistant for Azure DevOps. The
+same `release-governance` and `azure-devops` MCP servers power agents in Cursor, GitHub
+Copilot, and Claude. See `docs/hosts/agent-hosts-overview.md`.
+
+## Architecture Principles
+
+- Keep business logic in application services, not in controllers, prompts, or MCP wrappers.
+- Keep MCP servers thin: MCP tools delegate to application services.
+- Use deterministic validation rules for release readiness.
+- Use LLMs only for summarization, document drafting, and guided interaction.
+- Treat Azure DevOps data and `release-governance` MCP responses as the source of truth.
+
+## Hard Safety Rules
+
+- Never invent work item IDs, PRs, pipeline links, rollback links, statuses, approvals, or dates.
+- Mark missing data explicitly as `Missing`; never hide it.
+- Never override or soften MCP validation results.
+- Never approve releases, trigger production deployments, or modify Azure DevOps work item
+  states in the MVP.
+- Any production-impacting action requires explicit human confirmation and audit logging.
+
+## MCP Tools
+
+The `release-governance` MCP server exposes 10 canonical tools (see
+`docs/mcp/mcp-tool-contracts.md`):
+`create_release_item`, `get_release_item`, `get_application_mapping`,
+`attach_work_items_to_release`, `attach_pull_requests_to_release`,
+`attach_deployments_to_release`, `find_rollback_candidates`, `validate_release`,
+`generate_release_package`, `save_release_document`.
+
+Use the `azure-devops` MCP server (read-only) for raw work items, PRs, and pipeline data.
+
+## Agent Roles
+
+Role definitions live in `.cursor/rules/*.mdc` (and mirror `docs/agents/*.md`). When a task
+matches a role, act according to that role's rule. Respect each role's documented tool access
+(least privilege) from `docs/mcp/mcp-strategy.md`.
+
+## Coding Standards
+
+- Use dependency injection and async APIs with cancellation tokens for I/O.
+- Return structured results with success, warnings, and errors; avoid throwing for expected
+  validation failures.
+- Do not commit secrets. Never log PATs, tokens, connection strings, or Authorization
+  headers; redact as `[REDACTED]`.
+- Add unit tests for validation rules and document generation with missing fields.

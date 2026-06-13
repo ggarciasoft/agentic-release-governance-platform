@@ -1,8 +1,10 @@
 # Release Document Agent
 
-> Canonical name: **Release Document Agent**. The Copilot agent file is
-> [`.github/agents/release-document-agent.agent.md`](../../.github/agents/release-document-agent.agent.md)
-> and the structured output `agent` value is `ReleaseDocumentAgent`. Earlier drafts called
+> Canonical name: **Release Document Agent**. This host-neutral spec is expressed per host as
+> [`.github/agents/release-document-agent.agent.md`](../../.github/agents/release-document-agent.agent.md),
+> [`.cursor/rules/release-document-agent.mdc`](../../.cursor/rules/release-document-agent.mdc),
+> and [`.claude/agents/release-document-agent.md`](../../.claude/agents/release-document-agent.md);
+> the structured output `agent` value is `ReleaseDocumentAgent`. Earlier drafts called
 > this the "Document Agent" / "Document Generation Agent"; those names are deprecated.
 
 ## 1. Role

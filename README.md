@@ -1,19 +1,30 @@
 # AI Release Assistant for Azure DevOps
 
-The AI Release Assistant is a Copilot-callable, MCP-powered agentic release system for Azure DevOps teams.
+The AI Release Assistant is an **MCP-first, agent-host-agnostic** agentic release system for
+Azure DevOps teams.
 
-It helps release managers and developers create a release item, collect user stories and bugs, find linked pull requests, inspect release pipelines, identify rollback candidates, validate release readiness, and generate official release documentation.
+It helps release managers and developers create a release item, collect user stories and bugs,
+find linked pull requests, inspect release pipelines, identify rollback candidates, validate
+release readiness, and generate official release documentation.
 
-## Updated Direction
+## Direction
 
-The system is now designed as a **Copilot-first multi-agent project**.
+The system is designed as an **MCP-first multi-agent project**. The release workflow is exposed
+through standard [Model Context Protocol](https://modelcontextprotocol.io) servers, so the same
+agents run on any MCP-compatible host:
 
-Users should be able to call specialized AI agents from GitHub Copilot, especially in VS Code Copilot Chat Agent mode.
+- **GitHub Copilot** (VS Code Copilot Chat Agent mode)
+- **Cursor** (Agent + rules)
+- **Claude** (Claude Code subagents, Claude Desktop)
 
-Example:
+You pick the host your team already uses; the backend, MCP tools, and agent roles are identical.
+See [Agent Hosts Overview](docs/hosts/agent-hosts-overview.md).
+
+Example (syntax varies by host):
 
 ```text
-@release-orchestrator Create a release for CR-12345, get the related user stories, PRs, production release pipelines, validate readiness, and create the release document.
+Use the release-orchestrator to create a release for CR-12345, get the related user stories,
+PRs, and production release pipelines, validate readiness, and create the release document.
 ```
 
 ## Core Capabilities
@@ -32,8 +43,9 @@ Example:
 ## Main Architecture
 
 ```text
-GitHub Copilot
-  -> Custom Agents (.github/agents/*.agent.md)
+Any MCP host (Copilot | Cursor | Claude)
+  -> Host-native agent definitions
+       (.github/agents/*.agent.md | .cursor/rules/*.mdc | .claude/agents/*.md)
   -> MCP Tools
       -> Existing Azure DevOps MCP Server
       -> Custom Release Governance MCP Server
@@ -41,16 +53,18 @@ GitHub Copilot
   -> Azure DevOps + Database + Document Store
 ```
 
-## Recommended Stack
+See [MCP-First Architecture](docs/architecture/mcp-first-architecture.md).
+
+## Stack
 
 ```text
-Backend: .NET 8 Web API
-MCP Server: .NET MCP server wrapping application services
-Frontend: React or Next.js, optional for MVP
-Database: PostgreSQL or SQL Server
-Background Jobs: Hangfire or Azure Functions
-AI: GitHub Copilot custom agents + optional Azure OpenAI/OpenAI for document generation
-DevOps Integration: Azure DevOps REST API and/or Azure DevOps MCP Server
+Backend:           .NET 9 Web API (ASP.NET Core)
+MCP Server:        .NET 9 MCP server (ModelContextProtocol.AspNetCore)
+Database:          SQLite (local dev) · PostgreSQL or SQL Server (production)
+ORM:               Entity Framework Core
+AI Host:           GitHub Copilot · Cursor · Claude (any MCP-compatible client)
+DevOps:            Azure DevOps REST API + azure-devops MCP server
+Frontend:          Optional — React or Next.js (not required for the MCP-first MVP)
 ```
 
 ## Documentation Map
@@ -60,26 +74,23 @@ DevOps Integration: Azure DevOps REST API and/or Azure DevOps MCP Server
 - `docs/product/product-requirements.md`
 - `docs/product/mvp-scope.md`
 - `docs/product/user-flows.md`
-- `docs/product/updated-requirements-copilot-agents.md`
+- `docs/product/agent-host-requirements.md`
 
 ### Architecture
 
 - `docs/architecture/system-architecture.md`
 - `docs/architecture/agentic-architecture.md`
-- `docs/architecture/copilot-first-architecture.md`
+- `docs/architecture/mcp-first-architecture.md`
 - `docs/architecture/azure-devops-integration.md`
 
-### Copilot
+### Agent Hosts
 
-- `docs/copilot/copilot-agent-strategy.md`
-- `docs/copilot/copilot-agent-files.md`
-- `docs/copilot/mcp-configuration-for-copilot.md`
-- `.github/copilot-instructions.md`
-- `.github/agents/*.agent.md`
-- `.github/prompts/*.prompt.md`
-- `.github/instructions/release-assistant.instructions.md`
+- `docs/hosts/agent-hosts-overview.md` (start here)
+- `docs/hosts/github-copilot.md` — `.github/agents/*.agent.md`, `.github/copilot-instructions.md`
+- `docs/hosts/cursor.md` — `.cursor/mcp.json`, `.cursor/rules/*.mdc`
+- `docs/hosts/claude.md` — `.mcp.json`, `CLAUDE.md`, `.claude/agents/*.md`
 
-### Agents
+### Agents (host-neutral role specs)
 
 - `docs/agents/agents-overview.md`
 - `docs/agents/release-orchestrator-agent.md`
@@ -102,7 +113,7 @@ DevOps Integration: Azure DevOps REST API and/or Azure DevOps MCP Server
 ### API and Data
 
 - `docs/api/api-specification.md`
-- `docs/api/copilot-agent-api-flow.md`
+- `docs/api/agent-api-flow.md`
 - `docs/database/database-model.md`
 
 ### Security and Rules
@@ -127,52 +138,42 @@ DevOps Integration: Azure DevOps REST API and/or Azure DevOps MCP Server
 
 ### Roadmap
 
-- `docs/roadmap/copilot-first-mvp-roadmap.md` (canonical MVP plan)
+- `docs/roadmap/mcp-first-mvp-roadmap.md` (canonical MVP plan)
 - `docs/roadmap/mvp-roadmap.md` (legacy, UI-first — superseded)
 - `docs/roadmap/future-roadmap.md`
 
-## MVP Agents
+## Agent Definitions per Host
 
-The first implementation should include:
+The same role set is defined for each host. The MVP needs the first four; the rest refine the
+all-in-one analysis agent into specialists.
 
-```text
-release-orchestrator.agent.md
-azure-devops-analysis-agent.agent.md
-validation-agent.agent.md
-release-document-agent.agent.md
-```
+| Role | Copilot | Cursor | Claude |
+|---|---|---|---|
+| release-orchestrator | `.github/agents/release-orchestrator.agent.md` | `.cursor/rules/release-orchestrator.mdc` | `.claude/agents/release-orchestrator.md` |
+| azure-devops-analysis-agent | ✓ | ✓ | ✓ |
+| validation-agent | ✓ | ✓ | ✓ |
+| release-document-agent | ✓ | ✓ | ✓ |
+| work-item-agent | ✓ | ✓ | ✓ |
+| pull-request-agent | ✓ | ✓ | ✓ |
+| pipeline-agent | ✓ | ✓ | ✓ |
+| communication-agent | ✓ | ✓ | ✓ |
 
-Then split the analysis agent into:
+## Custom MCP Server
 
-```text
-work-item-agent.agent.md
-pull-request-agent.agent.md
-pipeline-agent.agent.md
-communication-agent.agent.md
-```
-
-## Required Custom MCP
-
-Create a custom MCP server named:
+The `release-governance` MCP server lives in `src/ReleaseAssistant.McpServer` and exposes
+10 canonical tools:
 
 ```text
-release-governance
+create_release_item          get_release_item
+get_application_mapping      attach_work_items_to_release
+attach_pull_requests_to_release  attach_deployments_to_release
+find_rollback_candidates     validate_release
+generate_release_package     save_release_document
 ```
 
-Required tools:
-
-```text
-create_release_item
-get_release_item
-get_application_mapping
-attach_work_items_to_release
-attach_pull_requests_to_release
-attach_deployments_to_release
-find_rollback_candidates
-validate_release
-generate_release_package
-save_release_document
-```
+See [`docs/mcp/mcp-tool-contracts.md`](docs/mcp/mcp-tool-contracts.md) for full input/output
+contracts and [`docs/mcp/release-governance-mcp-server-spec.md`](docs/mcp/release-governance-mcp-server-spec.md)
+for design rules.
 
 ## Safety Rules
 
@@ -184,15 +185,31 @@ save_release_document
 - Validation must be deterministic.
 - All production-impacting actions require human confirmation and audit logging.
 
-## First Build Recommendation
+## Getting Started
 
-Start with the Copilot-first MVP:
+The backend, MCP server, and agent definitions for all three hosts are already in the
+repository. To run the system locally:
 
-1. Add Copilot instructions and agent files.
-2. Build the Release Governance backend.
-3. Build the Release Governance MCP server.
-4. Integrate Azure DevOps work item search.
-5. Integrate PR discovery.
-6. Integrate pipeline and rollback discovery.
-7. Add validation rules.
-8. Add Markdown release document generation.
+```bash
+# 1. Build
+dotnet restore && dotnet build
+
+# 2. Run the backend API (http://localhost:5000)
+dotnet run --project src/ReleaseAssistant.Api
+
+# 3. In a second terminal, run the MCP server
+dotnet run --project src/ReleaseAssistant.McpServer
+
+# 4. Run tests
+dotnet test
+```
+
+Then connect your agent host following the matching guide:
+
+- **GitHub Copilot** → [`docs/hosts/github-copilot.md`](docs/hosts/github-copilot.md)
+- **Cursor** → [`docs/hosts/cursor.md`](docs/hosts/cursor.md)
+- **Claude** → [`docs/hosts/claude.md`](docs/hosts/claude.md)
+
+For full configuration steps (secrets, Azure DevOps PAT, EF migrations) see
+[`docs/development/getting-started.md`](docs/development/getting-started.md).
+Full phase-by-phase build plan: [MCP-First MVP Roadmap](docs/roadmap/mcp-first-mvp-roadmap.md).

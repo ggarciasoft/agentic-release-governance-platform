@@ -1,13 +1,13 @@
 # MVP Roadmap (Legacy — UI-First)
 
 > **Superseded.** This UI-first, agents-last roadmap is **not** the current plan. The
-> canonical MVP plan is the [Copilot-First MVP Roadmap](copilot-first-mvp-roadmap.md), which
-> builds the Copilot agents and MCP server first and treats the web UI as optional/future
-> (see [`../product/updated-requirements-copilot-agents.md`](../product/updated-requirements-copilot-agents.md)).
+> canonical MVP plan is the [MCP-First MVP Roadmap](mcp-first-mvp-roadmap.md), which
+> builds the MCP server and host agents first and treats the web UI as optional/future
+> (see [`../product/agent-host-requirements.md`](../product/agent-host-requirements.md)).
 >
 > This document is retained as a reference for the alternative server-driven, UI-led approach
 > that may inform the future web dashboard. Where the two roadmaps conflict (build order,
-> Phase 1 web UI, agents in the final phase), the Copilot-first roadmap wins.
+> Phase 1 web UI, agents in the final phase), the MCP-first roadmap wins.
 
 ## Phase 1 — Foundation
 

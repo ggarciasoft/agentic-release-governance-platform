@@ -71,7 +71,15 @@ example a critical bug) to not block a release.
 ## Agents
 
 **Agent** — A specialized AI role with a single responsibility and structured output. Defined
-as a doc under `docs/agents/` and as a Copilot agent file under `.github/agents/`.
+once as a host-neutral spec under `docs/agents/`, then expressed per host (`.github/agents/`,
+`.cursor/rules/`, `.claude/agents/`).
+
+**Agent Host** — An MCP-compatible client that runs agents (GitHub Copilot, Cursor, Claude,
+or another MCP client). The host is interchangeable because the workflow is exposed through
+MCP. See [Agent Hosts Overview](hosts/agent-hosts-overview.md).
+
+**MCP-First** — The design principle that the release workflow is exposed through standard
+MCP servers, so any MCP host can drive it without vendor lock-in.
 
 **Release Orchestrator Agent** — Coordinates the end-to-end release workflow.
 

@@ -58,9 +58,9 @@ Agents are probabilistic, so assert on **structure and safety**, not exact prose
 
 ### End-to-End (Pilot) Test
 
-One scripted run of the full Copilot-first flow from a Change Request to a generated release
+One scripted run of the full end-to-end flow from a Change Request to a generated release
 document, used as the pilot acceptance check
-([Copilot-First MVP Roadmap](../roadmap/copilot-first-mvp-roadmap.md) Phase 6).
+([MCP-First MVP Roadmap](../roadmap/mcp-first-mvp-roadmap.md) Phase 6).
 
 ## 3. Determinism Tests
 
@@ -82,7 +82,7 @@ tests are recommended for both validation results and generated documents.
 |---|---|---|
 | Validation engine | Critical | Decides readiness; must be deterministic |
 | Rollback discovery | Critical | Safety-relevant, easy to get subtly wrong |
-| MCP tool contracts | High | Stable interface for Copilot agents |
+| MCP tool contracts | High | Stable interface for agents across all hosts |
 | Application mapping | High | Gates deployment/rollback discovery |
 | Document generation | Medium | Output quality; "Missing" handling |
 | Agent prose quality | Low | Asserted structurally, not by exact text |
@@ -99,5 +99,5 @@ tests are recommended for both validation results and generated documents.
 ## 7. Out of Scope for the MVP
 
 - Load/performance testing.
-- UI end-to-end tests (no UI in the Copilot-first MVP).
+- UI end-to-end tests (no UI in the MCP-first MVP).
 - Testing production deployment/approval actions (not implemented in the MVP).

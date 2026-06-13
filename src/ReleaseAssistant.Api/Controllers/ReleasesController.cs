@@ -42,7 +42,7 @@ public class ReleasesController(ReleaseService releaseService) : ControllerBase
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
-    // Attach endpoints (Copilot-first, backs MCP attach_* tools)
+    // Attach endpoints (agent-driven, backs MCP attach_* tools)
 
     [HttpPost("{releaseId}/work-items")]
     public async Task<IActionResult> AttachWorkItems(string releaseId,

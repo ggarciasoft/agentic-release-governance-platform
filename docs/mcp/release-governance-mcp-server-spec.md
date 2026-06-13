@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Release Governance MCP Server exposes company-specific release workflow capabilities to Copilot agents and other MCP-compatible clients.
+The Release Governance MCP Server exposes company-specific release workflow capabilities to agents in any MCP-compatible host (GitHub Copilot, Cursor, Claude, or another MCP client).
 
 It should be the main custom MCP server for this project.
 

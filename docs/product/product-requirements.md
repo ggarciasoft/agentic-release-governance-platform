@@ -131,13 +131,15 @@ The MVP is successful when:
 
 ---
 
-# Copilot-First Requirement Update
+# MCP-First Requirement Update
 
-The product must support calling specialized AI agents from GitHub Copilot. These agents should use MCP tools to execute the release workflow.
+The product must support calling specialized AI agents from any MCP-compatible host
+(GitHub Copilot, Cursor, Claude, or another MCP client). These agents should use MCP tools to
+execute the release workflow, and no single AI vendor is required.
 
 ## New Primary User Experience
 
-A release manager or developer can use Copilot to request:
+A release manager or developer can use their agent host to request (syntax varies by host):
 
 ```text
 Create a release item for CR-12345, collect the related Azure DevOps work items, find linked PRs and production release pipelines, validate readiness, and create the release document.
@@ -156,7 +158,9 @@ Create a release item for CR-12345, collect the related Azure DevOps work items,
 
 The project must include:
 
-- Copilot custom agents under `.github/agents`.
-- Repository-wide Copilot instructions under `.github/copilot-instructions.md`.
+- Host-native agent definitions for at least one host, with parity across Copilot
+  (`.github/agents`), Cursor (`.cursor/rules`), and Claude (`.claude/agents`).
+- Repository-wide host instructions (`.github/copilot-instructions.md`, `CLAUDE.md`,
+  `.cursor/rules/release-assistant.mdc`).
 - A custom Release Governance MCP server.
 - MCP tool contracts for release workflow operations.

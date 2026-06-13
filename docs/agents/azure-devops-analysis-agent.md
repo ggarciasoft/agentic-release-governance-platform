@@ -3,8 +3,10 @@
 > This is the **MVP all-in-one** Azure DevOps collection agent. It combines the work of the
 > future [Work Item Agent](work-item-agent.md), [Pull Request Agent](pull-request-agent.md),
 > [Pipeline Agent](pipeline-agent.md), and [Rollback Agent](rollback-agent.md) into a single
-> agent so the MVP can ship with a smaller agent set. The Copilot agent file is
-> [`.github/agents/azure-devops-analysis-agent.agent.md`](../../.github/agents/azure-devops-analysis-agent.agent.md).
+> agent so the MVP can ship with a smaller agent set. It is expressed per host as
+> [`.github/agents/azure-devops-analysis-agent.agent.md`](../../.github/agents/azure-devops-analysis-agent.agent.md),
+> [`.cursor/rules/azure-devops-analysis-agent.mdc`](../../.cursor/rules/azure-devops-analysis-agent.mdc),
+> and [`.claude/agents/azure-devops-analysis-agent.md`](../../.claude/agents/azure-devops-analysis-agent.md).
 > When the system moves to the split-agent topology, this agent is replaced by the four
 > specialized agents.
 
