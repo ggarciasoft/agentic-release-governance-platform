@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ReleaseAssistant.Agents/ReleaseAssistant.Agents.csproj" />
+    <Project Path="src/ReleaseAssistant.Api/ReleaseAssistant.Api.csproj" />
+    <Project Path="src/ReleaseAssistant.Application/ReleaseAssistant.Application.csproj" />
+    <Project Path="src/ReleaseAssistant.AzureDevOps/ReleaseAssistant.AzureDevOps.csproj" />
+    <Project Path="src/ReleaseAssistant.Domain/ReleaseAssistant.Domain.csproj" />
+    <Project Path="src/ReleaseAssistant.Infrastructure/ReleaseAssistant.Infrastructure.csproj" />
+    <Project Path="src/ReleaseAssistant.McpServer/ReleaseAssistant.McpServer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ReleaseAssistant.Tests/ReleaseAssistant.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReleaseAssistant.Application\ReleaseAssistant.Application.csproj" />
+    <ProjectReference Include="..\ReleaseAssistant.Infrastructure\ReleaseAssistant.Infrastructure.csproj" />
+    <ProjectReference Include="..\ReleaseAssistant.AzureDevOps\ReleaseAssistant.AzureDevOps.csproj" />
+    <ProjectReference Include="..\ReleaseAssistant.Agents\ReleaseAssistant.Agents.csproj" />
+  </ItemGroup>
+
+</Project>

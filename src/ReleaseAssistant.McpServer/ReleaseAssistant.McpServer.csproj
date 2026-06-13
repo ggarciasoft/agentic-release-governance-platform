@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReleaseAssistant.Application\ReleaseAssistant.Application.csproj" />
+    <ProjectReference Include="..\ReleaseAssistant.Infrastructure\ReleaseAssistant.Infrastructure.csproj" />
+    <ProjectReference Include="..\ReleaseAssistant.AzureDevOps\ReleaseAssistant.AzureDevOps.csproj" />
+    <ProjectReference Include="..\ReleaseAssistant.Agents\ReleaseAssistant.Agents.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="0.2.0-preview.3" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.3" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
