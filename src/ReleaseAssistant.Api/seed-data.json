@@ -1,0 +1,15 @@
+[
+  {
+    "applicationName": "release-document",
+    "organization": null,
+    "project": null,
+    "repositoryName": "release-document",
+    "buildDefinitionId": 3,
+    "buildDefinitionName": "release-document-ci",
+    "releaseDefinitionId": 1,
+    "releaseDefinitionName": "release-document-cd",
+    "productionEnvironmentName": "Production",
+    "uatEnvironmentName": "Production",
+    "isActive": true
+  }
+]
