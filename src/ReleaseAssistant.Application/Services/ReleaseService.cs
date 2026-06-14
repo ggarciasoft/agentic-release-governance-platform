@@ -56,33 +56,21 @@ public class ReleaseService(
         if (!Guid.TryParse(req.ReleaseId, out var releaseId))
             throw new ArgumentException("Invalid releaseId.", nameof(req));
 
-        var release = await releases.GetByIdAsync(releaseId, ct)
-            ?? throw new KeyNotFoundException($"Release {req.ReleaseId} not found.");
-
-        int count = 0;
-        foreach (var wi in req.WorkItems)
+        var workItems = req.WorkItems.Select(wi => new ReleaseWorkItem
         {
-            release.WorkItems.Add(new ReleaseWorkItem
-            {
-                ReleaseId = releaseId,
-                AzureDevOpsWorkItemId = wi.Id,
-                WorkItemType = wi.Type,
-                Title = wi.Title,
-                State = wi.State,
-                AssignedTo = wi.AssignedTo,
-                TagsJson = JsonSerializer.Serialize(wi.Tags ?? Array.Empty<string>()),
-                AreaPath = wi.AreaPath,
-                IterationPath = wi.IterationPath,
-                Url = wi.Url,
-                RawJson = wi.RawJson
-            });
-            count++;
-        }
+            AzureDevOpsWorkItemId = wi.Id,
+            WorkItemType = wi.Type,
+            Title = wi.Title,
+            State = wi.State,
+            AssignedTo = wi.AssignedTo,
+            TagsJson = JsonSerializer.Serialize(wi.Tags ?? Array.Empty<string>()),
+            AreaPath = wi.AreaPath,
+            IterationPath = wi.IterationPath,
+            Url = wi.Url,
+            RawJson = wi.RawJson
+        }).ToList();
 
-        release.Status = ReleaseStatus.Analyzing;
-        release.UpdatedAt = DateTime.UtcNow;
-        await releases.SaveChangesAsync(ct);
-        return count;
+        return await releases.AddWorkItemsAsync(releaseId, workItems, ct);
     }
 
     public async Task<int> AttachPullRequestsAsync(AttachPullRequestsRequest req, CancellationToken ct = default)
@@ -93,12 +81,11 @@ public class ReleaseService(
         var release = await releases.GetByIdWithAllDataAsync(releaseId, ct)
             ?? throw new KeyNotFoundException($"Release {req.ReleaseId} not found.");
 
-        int count = 0;
+        var pullRequests = new List<ReleasePullRequest>();
         foreach (var pr in req.PullRequests)
         {
             var releasePr = new ReleasePullRequest
             {
-                ReleaseId = releaseId,
                 AzureDevOpsPullRequestId = pr.PullRequestId,
                 RepositoryId = pr.RepositoryId,
                 RepositoryName = pr.RepositoryName,
@@ -121,7 +108,6 @@ public class ReleaseService(
                 {
                     releasePr.WorkItemLinks.Add(new ReleasePullRequestWorkItem
                     {
-                        ReleasePullRequestId = releasePr.Id,
                         ReleaseWorkItemId = wi.Id,
                         AzureDevOpsWorkItemId = wiId,
                         AzureDevOpsPullRequestId = pr.PullRequestId
@@ -129,13 +115,10 @@ public class ReleaseService(
                 }
             }
 
-            release.PullRequests.Add(releasePr);
-            count++;
+            pullRequests.Add(releasePr);
         }
 
-        release.UpdatedAt = DateTime.UtcNow;
-        await releases.SaveChangesAsync(ct);
-        return count;
+        return await releases.AddPullRequestsAsync(releaseId, pullRequests, ct);
     }
 
     public async Task<int> AttachDeploymentsAsync(AttachDeploymentsRequest req, CancellationToken ct = default)
@@ -143,36 +126,87 @@ public class ReleaseService(
         if (!Guid.TryParse(req.ReleaseId, out var releaseId))
             throw new ArgumentException("Invalid releaseId.", nameof(req));
 
-        var release = await releases.GetByIdAsync(releaseId, ct)
-            ?? throw new KeyNotFoundException($"Release {req.ReleaseId} not found.");
+        // Deduplicate by ApplicationName — last wins
+        var deduped = req.Deployments
+            .GroupBy(d => d.ApplicationName, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.Last());
 
-        int count = 0;
-        foreach (var dep in req.Deployments)
+        var deployments = deduped.Select(dep => new ReleaseDeployment
         {
-            release.Deployments.Add(new ReleaseDeployment
+            ApplicationName = dep.ApplicationName,
+            AzureDevOpsReleaseName = dep.ReleaseName,
+            AzureDevOpsReleaseId = dep.AzureDevOpsReleaseId,
+            ReleaseDefinitionId = dep.ReleaseDefinitionId,
+            ReleaseDefinitionName = dep.ReleaseDefinitionName,
+            EnvironmentName = dep.EnvironmentName,
+            DeploymentStatus = dep.Status,
+            ApprovalStatus = dep.ApprovalStatus,
+            DeploymentUrl = dep.Url,
+            StartedAt = dep.StartedAt,
+            CompletedAt = dep.CompletedAt,
+            RawJson = dep.RawJson,
+            IsCurrentDeployment = true
+        }).ToList();
+
+        return await releases.AddDeploymentsAsync(releaseId, deployments, ct);
+    }
+
+    public async Task<int> AttachRollbackCandidatesAsync(AttachRollbackCandidatesRequest req, CancellationToken ct = default)
+    {
+        if (!Guid.TryParse(req.ReleaseId, out var releaseId))
+            throw new ArgumentException("Invalid releaseId.", nameof(req));
+
+        // Deduplicate by ApplicationName — last wins
+        var deduped = req.Candidates
+            .GroupBy(c => c.ApplicationName, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.Last());
+
+        var candidates = deduped.Select(c => new ReleaseRollbackCandidate
+        {
+            ApplicationName = c.ApplicationName,
+            AzureDevOpsReleaseName = c.ReleaseName,
+            AzureDevOpsReleaseId = c.AzureDevOpsReleaseId,
+            ReleaseDefinitionId = c.ReleaseDefinitionId,
+            ReleaseDefinitionName = c.ReleaseDefinitionName,
+            EnvironmentName = c.EnvironmentName,
+            DeploymentStatus = c.Status,
+            RollbackUrl = c.Url,
+            CompletedAt = c.CompletedAt,
+            RawJson = c.RawJson
+        }).ToList();
+
+        return await releases.AddRollbackCandidatesAsync(releaseId, candidates, ct);
+    }
+
+    public async Task<int> EnsureApplicationsAsync(Guid releaseId, IReadOnlyList<string> applicationNames,
+        string organization, string project, CancellationToken ct = default)
+    {
+        var release = await releases.GetByIdWithAllDataAsync(releaseId, ct)
+            ?? throw new KeyNotFoundException($"Release {releaseId} not found.");
+
+        var missing = applicationNames
+            .Where(name => !release.Applications.Any(a =>
+                a.ApplicationName.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+        if (missing.Count == 0) return 0;
+
+        var applications = new List<ReleaseApplication>();
+        foreach (var appName in missing)
+        {
+            var mapping = await mappings.GetByNameAsync(appName, organization, project, ct);
+            applications.Add(new ReleaseApplication
             {
-                ReleaseId = releaseId,
-                ApplicationName = dep.ApplicationName,
-                AzureDevOpsReleaseName = dep.ReleaseName,
-                AzureDevOpsReleaseId = dep.AzureDevOpsReleaseId,
-                ReleaseDefinitionId = dep.ReleaseDefinitionId,
-                ReleaseDefinitionName = dep.ReleaseDefinitionName,
-                EnvironmentName = dep.EnvironmentName,
-                DeploymentStatus = dep.Status,
-                ApprovalStatus = dep.ApprovalStatus,
-                DeploymentUrl = dep.Url,
-                StartedAt = dep.StartedAt,
-                CompletedAt = dep.CompletedAt,
-                RawJson = dep.RawJson,
-                IsCurrentDeployment = true
+                ApplicationName = appName,
+                RepositoryName = mapping?.RepositoryName ?? string.Empty,
+                BuildDefinitionId = mapping?.BuildDefinitionId,
+                ReleaseDefinitionId = mapping?.ReleaseDefinitionId,
+                ProductionEnvironmentName = mapping?.ProductionEnvironmentName ?? release.TargetEnvironment,
+                UatEnvironmentName = mapping?.UatEnvironmentName ?? "UAT"
             });
-            count++;
         }
 
-        release.Status = ReleaseStatus.AnalysisComplete;
-        release.UpdatedAt = DateTime.UtcNow;
-        await releases.SaveChangesAsync(ct);
-        return count;
+        return await releases.AddApplicationsAsync(releaseId, applications, ct);
     }
 
     public async Task<IReadOnlyList<ReleaseRollbackCandidate>> FindRollbackCandidatesAsync(
@@ -212,25 +246,18 @@ public class ReleaseService(
 
         var summary = await validationEngine.ValidateAsync(release, ct);
 
-        // Persist results
-        release.ValidationResults.Clear();
-        foreach (var f in summary.Blockers.Concat(summary.Warnings).Concat(summary.Info))
-        {
-            release.ValidationResults.Add(new ReleaseValidationResult
+        var results = summary.Blockers.Concat(summary.Warnings).Concat(summary.Info)
+            .Select(f => new ReleaseValidationResult
             {
-                ReleaseId = releaseId,
                 RuleCode = f.Code,
                 Severity = f.Severity,
                 Status = summary.Status,
                 Message = f.Message,
                 EntityType = f.EntityType,
                 EntityId = f.EntityId
-            });
-        }
+            }).ToList();
 
-        release.Status = ReleaseStatus.ValidationComplete;
-        release.UpdatedAt = DateTime.UtcNow;
-        await releases.SaveChangesAsync(ct);
+        await releases.SaveValidationResultsAsync(releaseId, summary.Status, results, ct);
         return summary;
     }
 
@@ -249,7 +276,9 @@ public class ReleaseService(
                 w.AzureDevOpsWorkItemId, w.WorkItemType, w.Title, w.State, w.AssignedTo, w.Url)).ToList(),
             PullRequests: release.PullRequests.Select(p => new ReleasePackagePullRequest(
                 p.AzureDevOpsPullRequestId, p.RepositoryName, p.Title, p.Status, p.TargetBranch, p.Url)).ToList(),
-            Deployments: release.Deployments.Select(d => new ReleasePackageDeployment(
+            Deployments: release.Deployments
+                .Where(d => d.IsCurrentDeployment)
+                .Select(d => new ReleasePackageDeployment(
                 d.ApplicationName, d.AzureDevOpsReleaseName, d.EnvironmentName, d.DeploymentStatus, d.ApprovalStatus, d.DeploymentUrl)).ToList(),
             RollbackCandidates: release.RollbackCandidates.Select(r => new ReleasePackageRollbackCandidate(
                 r.ApplicationName, r.AzureDevOpsReleaseName, r.EnvironmentName, r.DeploymentStatus, r.RollbackUrl)).ToList(),
@@ -260,25 +289,18 @@ public class ReleaseService(
     public async Task<ReleaseDocument> SaveDocumentAsync(Guid releaseId, string format, string content,
         string generatedBy = "agent", CancellationToken ct = default)
     {
-        var release = await releases.GetByIdAsync(releaseId, ct)
+        _ = await releases.GetByIdAsync(releaseId, ct)
             ?? throw new KeyNotFoundException($"Release {releaseId} not found.");
 
-        var version = release.Documents.Count + 1;
         var doc = new ReleaseDocument
         {
-            ReleaseId = releaseId,
             Format = format,
             Content = content,
-            Version = version,
             GeneratedBy = generatedBy,
             GeneratedAt = DateTime.UtcNow
         };
 
-        release.Documents.Add(doc);
-        release.Status = ReleaseStatus.DocumentGenerated;
-        release.UpdatedAt = DateTime.UtcNow;
-        await releases.SaveChangesAsync(ct);
-        return doc;
+        return await releases.AddDocumentAsync(releaseId, doc, ct);
     }
 
     public async Task SoftDeleteAsync(Guid releaseId, CancellationToken ct = default)

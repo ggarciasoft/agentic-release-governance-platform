@@ -252,6 +252,37 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // 7b. attach_rollback_candidates_to_release
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [McpServerTool(Name = "attach_rollback_candidates_to_release")]
+    [Description("Stores rollback candidates found in Azure DevOps. One candidate per application per release.")]
+    public async Task<string> AttachRollbackCandidatesToReleaseAsync(
+        [Description("The releaseId")] string releaseId,
+        [Description("JSON array of rollback candidates with applicationName, releaseName, environmentName, status, url")] string candidatesJson)
+    {
+        const string tool = "attach_rollback_candidates_to_release";
+        try
+        {
+            var candidates = JsonSerializer.Deserialize<IReadOnlyList<RollbackCandidateData>>(candidatesJson, JsonOpts)
+                ?? Array.Empty<RollbackCandidateData>();
+
+            var count = await releaseService.AttachRollbackCandidatesAsync(
+                new AttachRollbackCandidatesRequest(releaseId, candidates));
+
+            return Serialize(McpResponse<object>.Ok(tool, new { attachedCount = count }));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Serialize(McpResponse<object>.Fail(tool, "RELEASE_NOT_FOUND", ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return Serialize(McpResponse<object>.Fail(tool, "VALIDATION_ERROR", ex.Message));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // 8. validate_release
     // ─────────────────────────────────────────────────────────────────────────
 

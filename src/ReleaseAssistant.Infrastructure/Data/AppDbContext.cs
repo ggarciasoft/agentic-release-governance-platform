@@ -60,7 +60,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(p => p.AzureDevOpsPullRequestId));
 
         modelBuilder.Entity<ReleaseDeployment>(e =>
-            e.HasIndex(d => d.ApplicationName));
+        {
+            e.HasIndex(d => d.ApplicationName);
+            e.HasIndex(d => new { d.ReleaseId, d.ApplicationName })
+                .IsUnique()
+                .HasFilter("\"IsCurrentDeployment\" = true");
+        });
+
+        modelBuilder.Entity<ReleaseRollbackCandidate>(e =>
+        {
+            e.HasIndex(r => r.ApplicationName);
+            e.HasIndex(r => new { r.ReleaseId, r.ApplicationName })
+                .IsUnique();
+        });
 
         modelBuilder.Entity<ReleaseValidationResult>(e =>
             e.HasIndex(v => v.ReleaseId));
