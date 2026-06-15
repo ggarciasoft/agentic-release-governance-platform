@@ -87,7 +87,9 @@ dotnet ef database update --project src/ReleaseAssistant.Infrastructure --startu
 dotnet run --project src/ReleaseAssistant.Api
 ```
 
-The API exposes the routes in the [API Specification](../api/api-specification.md). Background
+The API listens on **http://localhost:5050** by default (see
+`src/ReleaseAssistant.Api/Properties/launchSettings.json`). Set
+`RELEASE_ASSISTANT_API_BASE_URL` in MCP config to match.
 work (analysis, document generation) runs via Hangfire as described in
 [System Architecture §6](../architecture/system-architecture.md).
 

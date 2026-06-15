@@ -65,7 +65,7 @@ Copilot reads MCP servers from VS Code workspace/user configuration (for example
       "command": "dotnet",
       "args": ["run", "--project", "src/ReleaseAssistant.McpServer/ReleaseAssistant.McpServer.csproj"],
       "env": {
-        "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5000",
+        "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5050",
         "AZURE_DEVOPS_ORGANIZATION": "${input:azureDevOpsOrganization}",
         "AZURE_DEVOPS_PROJECT": "${input:azureDevOpsProject}"
       }

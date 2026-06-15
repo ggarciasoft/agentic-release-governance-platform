@@ -36,16 +36,34 @@ public class ReleaseRepository(AppDbContext db) : IReleaseRepository
         var release = await db.Releases.FirstOrDefaultAsync(r => r.Id == releaseId, ct)
             ?? throw new KeyNotFoundException($"Release {releaseId} not found.");
 
-        foreach (var workItem in workItems)
+        // Deduplicate by Azure DevOps work item ID — last wins within the batch
+        var deduped = workItems
+            .GroupBy(w => w.AzureDevOpsWorkItemId)
+            .Select(g => g.Last())
+            .ToList();
+
+        var added = 0;
+        foreach (var workItem in deduped)
         {
+            var existing = await db.ReleaseWorkItems
+                .FirstOrDefaultAsync(w => w.ReleaseId == releaseId
+                    && w.AzureDevOpsWorkItemId == workItem.AzureDevOpsWorkItemId, ct);
+
+            if (existing != null)
+            {
+                UpdateWorkItemSnapshot(existing, workItem);
+                continue;
+            }
+
             workItem.ReleaseId = releaseId;
             await db.ReleaseWorkItems.AddAsync(workItem, ct);
+            added++;
         }
 
         release.Status = ReleaseStatus.Analyzing;
         release.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
-        return workItems.Count;
+        return added;
     }
 
     public async Task<int> AddPullRequestsAsync(Guid releaseId, IReadOnlyList<ReleasePullRequest> pullRequests, CancellationToken ct = default)
@@ -53,15 +71,34 @@ public class ReleaseRepository(AppDbContext db) : IReleaseRepository
         var release = await db.Releases.FirstOrDefaultAsync(r => r.Id == releaseId, ct)
             ?? throw new KeyNotFoundException($"Release {releaseId} not found.");
 
-        foreach (var pullRequest in pullRequests)
+        // Deduplicate by Azure DevOps pull request ID — last wins within the batch
+        var deduped = pullRequests
+            .GroupBy(p => p.AzureDevOpsPullRequestId)
+            .Select(g => g.Last())
+            .ToList();
+
+        var added = 0;
+        foreach (var pullRequest in deduped)
         {
+            var existing = await db.ReleasePullRequests
+                .Include(p => p.WorkItemLinks)
+                .FirstOrDefaultAsync(p => p.ReleaseId == releaseId
+                    && p.AzureDevOpsPullRequestId == pullRequest.AzureDevOpsPullRequestId, ct);
+
+            if (existing != null)
+            {
+                UpdatePullRequestSnapshot(existing, pullRequest);
+                continue;
+            }
+
             pullRequest.ReleaseId = releaseId;
             await db.ReleasePullRequests.AddAsync(pullRequest, ct);
+            added++;
         }
 
         release.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
-        return pullRequests.Count;
+        return added;
     }
 
     public async Task<int> AddDeploymentsAsync(Guid releaseId, IReadOnlyList<ReleaseDeployment> deployments, CancellationToken ct = default)
@@ -200,4 +237,35 @@ public class ReleaseRepository(AppDbContext db) : IReleaseRepository
 
     public Task SaveChangesAsync(CancellationToken ct = default)
         => db.SaveChangesAsync(ct);
+
+    private static void UpdateWorkItemSnapshot(ReleaseWorkItem existing, ReleaseWorkItem incoming)
+    {
+        existing.WorkItemType = incoming.WorkItemType;
+        existing.Title = incoming.Title;
+        existing.State = incoming.State;
+        existing.AssignedTo = incoming.AssignedTo;
+        existing.TagsJson = incoming.TagsJson;
+        existing.AreaPath = incoming.AreaPath;
+        existing.IterationPath = incoming.IterationPath;
+        existing.Url = incoming.Url;
+        existing.RawJson = incoming.RawJson;
+        existing.UpdatedAt = DateTime.UtcNow;
+    }
+
+    private static void UpdatePullRequestSnapshot(ReleasePullRequest existing, ReleasePullRequest incoming)
+    {
+        existing.RepositoryId = incoming.RepositoryId;
+        existing.RepositoryName = incoming.RepositoryName;
+        existing.Title = incoming.Title;
+        existing.Status = incoming.Status;
+        existing.SourceBranch = incoming.SourceBranch;
+        existing.TargetBranch = incoming.TargetBranch;
+        existing.CreatedBy = incoming.CreatedBy;
+        existing.CompletedBy = incoming.CompletedBy;
+        existing.CreatedAtFromAzureDevOps = incoming.CreatedAtFromAzureDevOps;
+        existing.CompletedAtFromAzureDevOps = incoming.CompletedAtFromAzureDevOps;
+        existing.Url = incoming.Url;
+        existing.RawJson = incoming.RawJson;
+        existing.UpdatedAt = DateTime.UtcNow;
+    }
 }

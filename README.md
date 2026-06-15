@@ -30,6 +30,11 @@ PRs, and production release pipelines, validate readiness, and create the releas
 ## Core Capabilities
 
 - Create release items.
+- Collect Azure DevOps evidence two ways:
+  - **Agent-driven** — `azure-devops` MCP collects data; `release-governance` MCP (or REST
+    attach endpoints) persists it.
+  - **Server-driven** — `POST /api/releases/{id}/analyze/*` queries Azure DevOps via the API
+    and attaches results (work items, PRs, deployments, rollback).
 - Search Azure DevOps work items by change request or tag.
 - Find linked pull requests.
 - Find release/build pipeline information.
@@ -43,15 +48,25 @@ PRs, and production release pipelines, validate readiness, and create the releas
 ## Main Architecture
 
 ```text
-Any MCP host (Copilot | Cursor | Claude)
-  -> Host-native agent definitions
-       (.github/agents/*.agent.md | .cursor/rules/*.mdc | .claude/agents/*.md)
-  -> MCP Tools
-      -> Existing Azure DevOps MCP Server
-      -> Custom Release Governance MCP Server
-  -> Release Assistant Backend
-  -> Azure DevOps + Database + Document Store
+Any MCP host (Copilot | Cursor | Claude)          Optional UI / scripts
+  -> Host-native agent definitions                      |
+       (.github/agents/*.agent.md | ...)                |
+  -> MCP Tools                                          |
+      -> azure-devops MCP (read ADO)                    |
+      -> release-governance MCP (persist + validate)    |
+            \___________________________________________/
+                              |
+                    Release Assistant API
+                    (attach + analyze + validate + documents)
+                              |
+                    Azure DevOps + Database + Document Store
 ```
+
+**Agent path:** collect via `azure-devops` MCP, then attach through `release-governance` MCP
+or `POST /api/releases/{id}/work-items` (and related attach endpoints).
+
+**Server path:** call `POST /api/releases/{id}/analyze` (or per-step `/analyze/*`) so the API
+queries Azure DevOps with the configured PAT and attaches results automatically.
 
 See [MCP-First Architecture](docs/architecture/mcp-first-architecture.md).
 
@@ -130,6 +145,7 @@ Frontend:          Optional — React or Next.js (not required for the MCP-first
 ### Development and Testing
 
 - `docs/development/getting-started.md`
+- `docs/development/release-orchestrator-run-learnings.md`
 - `docs/testing/testing-strategy.md`
 
 ### Reference
@@ -175,6 +191,23 @@ See [`docs/mcp/mcp-tool-contracts.md`](docs/mcp/mcp-tool-contracts.md) for full 
 contracts and [`docs/mcp/release-governance-mcp-server-spec.md`](docs/mcp/release-governance-mcp-server-spec.md)
 for design rules.
 
+## REST API Highlights
+
+The backend at `http://localhost:5050` backs the MCP tools and supports direct HTTP workflows.
+See [`docs/api/api-specification.md`](docs/api/api-specification.md) for full contracts.
+
+| Area | Endpoints |
+|---|---|
+| Releases | `POST/GET/DELETE /api/releases` |
+| Attach (agent-collected data) | `POST /api/releases/{id}/work-items`, `/pull-requests`, `/deployments`, `/rollback-candidates` |
+| Analyze (server-collected ADO data) | `POST /api/releases/{id}/analyze`, `/analyze/work-items`, `/analyze/pull-requests`, `/analyze/deployments`, `/analyze/rollback` |
+| Analysis progress | `GET /api/releases/{id}/analysis/status` |
+| Validation | `POST /api/releases/{id}/validate` |
+| Documents | `POST /api/releases/{id}/documents/generate`, `/documents` |
+
+Configure `AzureDevOps:Pat` (user secrets) for analyze endpoints; set `ADO_MCP_AUTH_TOKEN` in
+MCP host config for the `azure-devops` MCP server.
+
 ## Safety Rules
 
 - Agents must not invent Azure DevOps data.
@@ -194,15 +227,22 @@ repository. To run the system locally:
 # 1. Build
 dotnet restore && dotnet build
 
-# 2. Run the backend API (http://localhost:5000)
-dotnet run --project src/ReleaseAssistant.Api
+# 2. Configure Azure DevOps (user secrets — never commit the PAT)
+cd src/ReleaseAssistant.Api
+dotnet user-secrets set "AzureDevOps:Organization" "<your-org>"
+dotnet user-secrets set "AzureDevOps:Project" "<your-project>"
+dotnet user-secrets set "AzureDevOps:Pat" "<your-pat>"
 
-# 3. In a second terminal, run the MCP server
-dotnet run --project src/ReleaseAssistant.McpServer
+# 3. Run the backend API (http://localhost:5050)
+dotnet run --project src/ReleaseAssistant.Api
 
 # 4. Run tests
 dotnet test
 ```
+
+Register MCP servers in your host (`.cursor/mcp.json`, `.mcp.json`, or VS Code `mcp.json`).
+The host starts `release-governance` and `azure-devops` on demand — a separate MCP terminal is
+optional for debugging.
 
 Then connect your agent host following the matching guide:
 

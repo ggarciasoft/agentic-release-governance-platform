@@ -255,10 +255,9 @@ public class ReleaseService(
 
             if (currentDeployment == null) continue;
 
-            // Rollback candidate: latest successful deployment before the current candidate
-            // In the MVP this logic is simplified — we look at existing rollback data
-            // A more complete implementation would call AzureDevOps to find the prior deployment.
-            // For now, we mark that no rollback candidate was found if one isn't already attached.
+            // Rollback candidate: latest successful deployment before the current candidate.
+            // This method returns already-attached rollback rows only; use analyze/rollback or
+            // attach_rollback_candidates after ADO collection to populate data first.
             var existing = release.RollbackCandidates
                 .FirstOrDefault(r => r.ApplicationName.Equals(app.ApplicationName, StringComparison.OrdinalIgnoreCase));
 

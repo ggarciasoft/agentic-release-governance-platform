@@ -11,6 +11,7 @@ public static class ServiceRegistration
         services.Configure<AzureDevOpsOptions>(
             opts => configuration.GetSection(AzureDevOpsOptions.Section).Bind(opts));
         services.AddHttpClient<AzureDevOpsClient>();
+        services.AddScoped<ReleaseAssistant.Application.Interfaces.IAzureDevOpsDataCollector, AzureDevOpsDataCollector>();
         return services;
     }
 }

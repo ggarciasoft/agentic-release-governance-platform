@@ -209,7 +209,7 @@ public class ReleaseGovernanceTools(
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "find_rollback_candidates")]
-    [Description("Finds rollback candidates for each application. The rollback candidate is the latest successful production deployment before the current candidate.")]
+    [Description("Returns rollback candidates already attached to the release. Does not query Azure DevOps. Collect rollback data via azure-devops MCP or POST /analyze/rollback, then attach before calling this tool.")]
     public async Task<string> FindRollbackCandidatesAsync(
         [Description("The releaseId")] string releaseId)
     {

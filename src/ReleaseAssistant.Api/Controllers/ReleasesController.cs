@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using ReleaseAssistant.Application.Models.Mcp;
 using ReleaseAssistant.Application.Models.Requests;
+using ReleaseAssistant.Application.Models.Responses;
 using ReleaseAssistant.Application.Services;
 
 namespace ReleaseAssistant.Api.Controllers;
 
 [ApiController]
 [Route("api/releases")]
-public class ReleasesController(ReleaseService releaseService) : ControllerBase
+public class ReleasesController(ReleaseService releaseService, ReleaseAnalysisService analysisService) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateReleaseRequest req, CancellationToken ct)
@@ -22,7 +23,7 @@ public class ReleasesController(ReleaseService releaseService) : ControllerBase
     {
         var release = await releaseService.GetAsync(releaseId, ct);
         if (release == null) return NotFound(Problem("Release not found.", statusCode: 404));
-        return Ok(release);
+        return Ok(ReleaseDetailMapper.ToDetailResponse(release));
     }
 
     [HttpGet]
@@ -125,9 +126,91 @@ public class ReleasesController(ReleaseService releaseService) : ControllerBase
         try
         {
             var candidates = await releaseService.FindRollbackCandidatesAsync(releaseId, ct);
-            return Ok(candidates);
+            return Ok(new
+            {
+                rollbackCandidates = candidates.Select(c => new
+                {
+                    c.ApplicationName,
+                    releaseName = c.AzureDevOpsReleaseName,
+                    c.EnvironmentName,
+                    status = c.DeploymentStatus,
+                    url = c.RollbackUrl
+                }),
+                note = "Returns rollback candidates already attached to this release. " +
+                       "Use POST /analyze/rollback or attach manually to collect from Azure DevOps first."
+            });
         }
         catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    // Analyze endpoints (server-driven ADO collection + attach)
+
+    [HttpPost("{releaseId:guid}/analyze")]
+    public async Task<IActionResult> AnalyzeAll(Guid releaseId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await analysisService.AnalyzeAllAsync(releaseId, ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpPost("{releaseId:guid}/analyze/work-items")]
+    public async Task<IActionResult> AnalyzeWorkItems(Guid releaseId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await analysisService.AnalyzeWorkItemsAsync(releaseId, ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpPost("{releaseId:guid}/analyze/pull-requests")]
+    public async Task<IActionResult> AnalyzePullRequests(Guid releaseId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await analysisService.AnalyzePullRequestsAsync(releaseId, ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpPost("{releaseId:guid}/analyze/deployments")]
+    public async Task<IActionResult> AnalyzeDeployments(Guid releaseId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await analysisService.AnalyzeDeploymentsAsync(releaseId, ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpPost("{releaseId:guid}/analyze/rollback")]
+    public async Task<IActionResult> AnalyzeRollback(Guid releaseId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await analysisService.AnalyzeRollbackAsync(releaseId, ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpGet("{releaseId:guid}/analysis/status")]
+    public IActionResult GetAnalysisStatus(Guid releaseId)
+    {
+        var status = analysisService.GetAnalysisStatus(releaseId);
+        if (status == null)
+        {
+            return Ok(new AnalysisStatusResponse(
+                releaseId.ToString(), "NotStarted", 0, DateTime.UtcNow, Array.Empty<string>()));
+        }
+
+        return Ok(status);
     }
 
     [HttpPost("{releaseId:guid}/validate")]

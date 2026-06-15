@@ -54,10 +54,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         });
 
         modelBuilder.Entity<ReleaseWorkItem>(e =>
-            e.HasIndex(w => w.AzureDevOpsWorkItemId));
+            e.HasIndex(w => new { w.ReleaseId, w.AzureDevOpsWorkItemId })
+                .IsUnique());
 
         modelBuilder.Entity<ReleasePullRequest>(e =>
-            e.HasIndex(p => p.AzureDevOpsPullRequestId));
+            e.HasIndex(p => new { p.ReleaseId, p.AzureDevOpsPullRequestId })
+                .IsUnique());
 
         modelBuilder.Entity<ReleaseDeployment>(e =>
         {

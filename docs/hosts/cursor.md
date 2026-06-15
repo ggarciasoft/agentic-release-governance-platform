@@ -25,7 +25,7 @@ These files ship in this repository, so opening the project in Cursor wires ever
       "command": "dotnet",
       "args": ["run", "--project", "src/ReleaseAssistant.McpServer/ReleaseAssistant.McpServer.csproj"],
       "env": {
-        "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5000"
+        "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5050"
       }
     },
     "azure-devops": {
@@ -52,6 +52,9 @@ env var). Set `ADO_MCP_AUTH_TOKEN` to your PAT in your shell or Cursor environme
 starting the server (`--authentication envvar`). Never commit secrets to `.cursor/mcp.json`.
 
 After editing, enable both servers in **Cursor Settings → MCP** and confirm the tools appear.
+
+Set `RELEASE_ASSISTANT_API_BASE_URL` to match the API launch profile port (`5050` in
+`src/ReleaseAssistant.Api/Properties/launchSettings.json`).
 
 ## How Roles Map to Cursor
 

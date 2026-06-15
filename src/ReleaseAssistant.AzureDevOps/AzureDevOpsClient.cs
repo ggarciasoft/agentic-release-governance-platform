@@ -42,6 +42,69 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
         return detailResponse?.Value ?? Array.Empty<AdoWorkItem>();
     }
 
+    public async Task<IReadOnlyList<AdoWorkItem>> GetWorkItemsByIdsAsync(
+        IReadOnlyList<int> ids, string? org = null, string? project = null, CancellationToken ct = default)
+    {
+        if (ids.Count == 0) return Array.Empty<AdoWorkItem>();
+
+        var orgToUse = org ?? _opts.Organization;
+        var idsParam = string.Join(",", ids);
+        var detailUrl = $"{_opts.BaseUrl}/{orgToUse}/_apis/wit/workitems?ids={idsParam}&$expand=relations&api-version=7.1";
+        var detailResponse = await GetAsync<AdoBatchWorkItemResponse>(detailUrl, ct);
+        return detailResponse?.Value ?? Array.Empty<AdoWorkItem>();
+    }
+
+    public async Task<AdoEnvironmentDeployment?> FindLatestEnvironmentDeploymentAsync(
+        int releaseDefinitionId, string environmentName, string? org = null, string? project = null,
+        CancellationToken ct = default)
+    {
+        var releases = await GetReleasesForDefinitionAsync(releaseDefinitionId, environmentName, org, project, ct);
+        foreach (var release in releases.OrderByDescending(r => r.CreatedOn))
+        {
+            var env = FindEnvironment(release, environmentName);
+            if (env != null)
+                return ToEnvironmentDeployment(release, env);
+        }
+
+        return null;
+    }
+
+    public async Task<AdoEnvironmentDeployment?> FindPriorSuccessfulDeploymentAsync(
+        int releaseDefinitionId, string environmentName, int? excludeReleaseId, string? org = null,
+        string? project = null, CancellationToken ct = default)
+    {
+        var releases = await GetReleasesForDefinitionAsync(releaseDefinitionId, environmentName, org, project, ct);
+        foreach (var release in releases.OrderByDescending(r => r.CreatedOn))
+        {
+            if (excludeReleaseId.HasValue && release.Id == excludeReleaseId.Value)
+                continue;
+
+            var env = FindEnvironment(release, environmentName);
+            if (env != null && IsSuccessfulEnvironment(env))
+                return ToEnvironmentDeployment(release, env);
+        }
+
+        return null;
+    }
+
+    private static AdoReleaseEnvironment? FindEnvironment(AdoRelease release, string environmentName) =>
+        release.Environments?.FirstOrDefault(e =>
+            e.Name.Equals(environmentName, StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsSuccessfulEnvironment(AdoReleaseEnvironment env)
+    {
+        var status = env.Status ?? env.DeploySteps?.LastOrDefault()?.Status ?? string.Empty;
+        return status.Equals("succeeded", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static AdoEnvironmentDeployment ToEnvironmentDeployment(AdoRelease release, AdoReleaseEnvironment env)
+    {
+        var status = env.Status ?? env.DeploySteps?.LastOrDefault()?.Status ?? string.Empty;
+        var completedAt = env.DeploySteps?.LastOrDefault()?.LastModifiedOn;
+        var url = release.Links?.Web?.Href ?? string.Empty;
+        return new AdoEnvironmentDeployment(release, env, status, url, completedAt);
+    }
+
     public async Task<IReadOnlyList<AdoPullRequest>> GetPullRequestsForWorkItemAsync(
         AdoWorkItem workItem, string? org = null, string? project = null, CancellationToken ct = default)
     {

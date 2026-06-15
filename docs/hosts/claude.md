@@ -29,7 +29,7 @@ everything up.
       "command": "dotnet",
       "args": ["run", "--project", "src/ReleaseAssistant.McpServer/ReleaseAssistant.McpServer.csproj"],
       "env": {
-        "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5000"
+        "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5050"
       }
     },
     "azure-devops": {
@@ -100,7 +100,7 @@ Claude Desktop registers MCP servers in `claude_desktop_config.json`:
     "release-governance": {
       "command": "dotnet",
       "args": ["run", "--project", "/abs/path/to/src/ReleaseAssistant.McpServer/ReleaseAssistant.McpServer.csproj"],
-      "env": { "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5000" }
+      "env": { "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5050" }
     },
     "azure-devops": {
       "command": "npx",

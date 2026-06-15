@@ -99,8 +99,21 @@ POST /api/releases/{releaseId}/deployments
 
 ### Discover Rollback Candidates
 
+Returns rollback candidates **already attached** to the release. This endpoint does **not**
+query Azure DevOps. To discover rollback data from ADO, use `POST /analyze/rollback` or
+collect via the `azure-devops` MCP server and attach with
+`POST /api/releases/{releaseId}/rollback-candidates`.
+
 ```http
 POST /api/releases/{releaseId}/rollback-candidates/discover
+```
+
+Response includes attached candidates and a note when none are present.
+
+### Attach Rollback Candidates
+
+```http
+POST /api/releases/{releaseId}/rollback-candidates
 ```
 
 ### Get Release Package
@@ -109,11 +122,11 @@ POST /api/releases/{releaseId}/rollback-candidates/discover
 GET /api/releases/{releaseId}/package
 ```
 
-### Backend-Driven Analysis (optional / future)
+### Backend-Driven Analysis
 
-For a server-side workflow (for example a future web UI that triggers collection on the
-backend instead of through host agents), the API may also expose server-driven analysis
-endpoints. These are **not required for the MCP-first MVP**.
+For server-side workflows (for example a web UI that triggers collection on the backend
+instead of through host agents), the API exposes analysis endpoints that query Azure DevOps
+via the configured PAT, attach results to the release, and return step summaries.
 
 ```http
 POST /api/releases/{releaseId}/analyze
@@ -123,6 +136,15 @@ POST /api/releases/{releaseId}/analyze/deployments
 POST /api/releases/{releaseId}/analyze/rollback
 GET  /api/releases/{releaseId}/analysis/status
 ```
+
+Each analyze step:
+
+1. Reads release context (change request, organization, project, application mappings).
+2. Queries Azure DevOps through `AzureDevOpsClient`.
+3. Attaches collected data via the same attach logic used by MCP tools.
+
+Work-item analysis searches `System.Tags` for the release `changeRequest` value. Deployment
+and rollback analysis require application mappings with `releaseDefinitionId`.
 
 Analysis status response:
 

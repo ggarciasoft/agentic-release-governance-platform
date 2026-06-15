@@ -256,8 +256,13 @@ Stores deployment/release pipeline data.
 
 ## 7. find_rollback_candidates
 
-Finds the rollback candidate for each application. The default rollback candidate is the
-latest successful production deployment before the current production deployment candidate.
+Returns rollback candidates **already attached** to the release. This tool does **not** query
+Azure DevOps. Collect rollback data first (via the `azure-devops` MCP server or
+`POST /api/releases/{releaseId}/analyze/rollback`), attach with `attach_rollback_candidates`,
+then call this tool to read the attached rows.
+
+The intended rollback candidate is the latest successful production deployment before the
+current production deployment candidate.
 
 ### Input
 

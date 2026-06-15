@@ -28,7 +28,10 @@ public static class DbSeeder
             return;
 
         var json = await File.ReadAllTextAsync(seedPath);
-        var items = JsonSerializer.Deserialize<List<SeedMapping>>(json) ?? [];
+        var items = JsonSerializer.Deserialize<List<SeedMapping>>(json, new JsonSerializerOptions()
+        {
+            PropertyNameCaseInsensitive = true
+        }) ?? [];
 
         var mappings = items.Select(item => new ApplicationMapping
         {

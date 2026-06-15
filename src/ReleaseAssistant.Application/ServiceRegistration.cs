@@ -11,6 +11,8 @@ public static class ServiceRegistration
     {
         services.AddScoped<IValidationEngine, ValidationEngine>();
         services.AddScoped<ReleaseService>();
+        services.AddScoped<ReleaseAnalysisService>();
+        services.AddSingleton<IAnalysisStatusStore, InMemoryAnalysisStatusStore>();
         services.AddScoped<ApplicationMappingService>();
         services.AddScoped<IToolCallLogger, ToolCallLoggerService>();
         return services;
