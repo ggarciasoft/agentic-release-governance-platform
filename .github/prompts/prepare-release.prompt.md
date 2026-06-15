@@ -25,7 +25,8 @@ Ask for any missing required values:
 4. Find release pipeline/deployment information.
 5. Find rollback candidates.
 6. Validate release readiness.
-7. Generate the release document.
+7. Generate the release document through MCP or API tools. Do not edit document Markdown
+   files directly.
 
 ## Output
 

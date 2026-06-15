@@ -18,6 +18,8 @@ Use the Release Document Agent.
 - Mark missing links as `Missing`.
 - Include blockers and warnings.
 - Save the document if the user requests it.
+- Never edit existing release document files directly. Generate from the release package and
+  save with `save_release_document` or `POST /api/releases/{releaseId}/documents`.
 
 ## Required Sections
 

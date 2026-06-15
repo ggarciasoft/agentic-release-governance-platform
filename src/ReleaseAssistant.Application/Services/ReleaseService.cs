@@ -178,6 +178,36 @@ public class ReleaseService(
         return await releases.AddRollbackCandidatesAsync(releaseId, candidates, ct);
     }
 
+    public async Task<int> SyncApplicationsFromMappingsAsync(Guid releaseId, CancellationToken ct = default)
+    {
+        var release = await releases.GetByIdWithAllDataAsync(releaseId, ct)
+            ?? throw new KeyNotFoundException($"Release {releaseId} not found.");
+
+        var updated = 0;
+        foreach (var app in release.Applications)
+        {
+            var mapping = await mappings.GetByNameAsync(app.ApplicationName, release.Organization, release.Project, ct);
+            if (mapping == null)
+                continue;
+
+            app.RepositoryName = mapping.RepositoryName;
+            app.BuildDefinitionId = mapping.BuildDefinitionId;
+            app.ReleaseDefinitionId = mapping.ReleaseDefinitionId;
+            app.ProductionEnvironmentName = mapping.ProductionEnvironmentName;
+            app.UatEnvironmentName = mapping.UatEnvironmentName;
+            app.UpdatedAt = DateTime.UtcNow;
+            updated++;
+        }
+
+        if (updated > 0)
+        {
+            release.UpdatedAt = DateTime.UtcNow;
+            await releases.SaveChangesAsync(ct);
+        }
+
+        return updated;
+    }
+
     public async Task<int> EnsureApplicationsAsync(Guid releaseId, IReadOnlyList<string> applicationNames,
         string organization, string project, CancellationToken ct = default)
     {

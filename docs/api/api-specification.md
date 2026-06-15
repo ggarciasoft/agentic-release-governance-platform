@@ -179,7 +179,12 @@ Request:
 }
 ```
 
-### Save Document
+Response (`200 OK`):
+
+- **Content-Type:** `text/markdown; charset=utf-8`
+- **Content-Disposition:** `inline; filename="release-CR-12345-Production.md"`
+- **Body:** the full generated Markdown document (not JSON-wrapped)
+
 
 Persists agent-generated document content with versioning (backs the
 `save_release_document` MCP tool).

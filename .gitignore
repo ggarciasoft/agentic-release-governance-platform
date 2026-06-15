@@ -30,3 +30,4 @@ packages/
 
 # dotnet tools
 .config/dotnet-tools.json
+.cursor/mcp.json

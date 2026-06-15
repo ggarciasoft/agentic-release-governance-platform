@@ -30,17 +30,26 @@ These files ship in this repository, so opening the project in Cursor wires ever
     },
     "azure-devops": {
       "command": "npx",
-      "args": ["-y", "@azure-devops/mcp"],
-      "env": {
-        "AZURE_DEVOPS_ORG": "your-org"
-      }
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "your-org",
+        "-d",
+        "core",
+        "work",
+        "work-items",
+        "repositories",
+        "--authentication",
+        "envvar"
+      ]
     }
   }
 }
 ```
 
-Provide the Azure DevOps PAT through the `azure-devops` MCP server's documented environment
-variable (or Cursor's secret input). Never commit secrets to `.cursor/mcp.json`.
+Replace `your-org` with your Azure DevOps organization name (positional argument — **not** an
+env var). Set `ADO_MCP_AUTH_TOKEN` to your PAT in your shell or Cursor environment before
+starting the server (`--authentication envvar`). Never commit secrets to `.cursor/mcp.json`.
 
 After editing, enable both servers in **Cursor Settings → MCP** and confirm the tools appear.
 

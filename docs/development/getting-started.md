@@ -144,6 +144,10 @@ Follow the [MCP-First MVP Roadmap](../roadmap/mcp-first-mvp-roadmap.md):
   mode is enabled.
 - **MCP tools fail** — confirm the `release-governance` MCP server is running and registered,
   and that tool names match [`mcp-tool-contracts.md`](../mcp/mcp-tool-contracts.md).
-- **Azure DevOps 401/403** — verify the PAT scopes and that it is configured as a secret.
+- **Azure DevOps 401/403** — verify the PAT scopes and that `ADO_MCP_AUTH_TOKEN` is set in
+  your environment when using `--authentication envvar` (not `AZURE_DEVOPS_ORG`, which this
+  MCP server does not read).
+- **azure-devops MCP exits immediately** — the organization must be a **positional CLI
+  argument** (`npx -y @azure-devops/mcp your-org`), not an environment variable.
 - **Empty work item results** — confirm the Change Request value is applied as a tag on the
   work items (`System.Tags`).

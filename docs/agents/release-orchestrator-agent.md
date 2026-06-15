@@ -65,6 +65,10 @@ If validation finds warnings but no blockers, set release status to `Warning`.
 
 If no issues are found, set release status to `Ready`.
 
+Never edit release document Markdown files directly. Document updates must go through the
+Release Document Agent and `save_release_document` (or API document endpoints) after
+`generate_release_package`.
+
 ## 6. Output
 
 ```json

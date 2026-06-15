@@ -107,6 +107,7 @@ Use only provided data.
 Do not invent missing values.
 If data is missing, write Missing.
 Include release summary, work items, pull requests, deployments, rollback plan, validation summary, blockers, warnings, risks, and post-deployment checklist.
+Never edit existing release document Markdown files directly. Generate from the release package and persist with save_release_document or API document endpoints.
 
 Return Markdown content.
 ```

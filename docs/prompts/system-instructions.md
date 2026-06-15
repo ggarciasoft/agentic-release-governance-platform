@@ -59,6 +59,10 @@ The AI may explain validation results, but it must not override rule outcomes.
 
 Every release document and validation result should be traceable to the source data used to generate it.
 
+Never edit release document Markdown files directly (for example `release.md`, `release-*.md`).
+Generate and update documents only through `generate_release_package` and
+`save_release_document` (or the equivalent API document endpoints).
+
 ### No Hallucination
 
 If a field does not exist in the release package data, say `Missing` or `Not found in Azure DevOps data`.

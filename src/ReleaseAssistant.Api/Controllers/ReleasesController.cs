@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ReleaseAssistant.Application.Models.Mcp;
 using ReleaseAssistant.Application.Models.Requests;
 using ReleaseAssistant.Application.Services;
 
@@ -68,6 +69,32 @@ public class ReleasesController(ReleaseService releaseService) : ControllerBase
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
+    [HttpPost("{releaseId:guid}/applications")]
+    public async Task<IActionResult> EnsureApplications(Guid releaseId,
+        [FromBody] IReadOnlyList<string> applications, CancellationToken ct)
+    {
+        try
+        {
+            var release = await releaseService.GetAsync(releaseId, ct);
+            if (release == null) return NotFound();
+            var count = await releaseService.EnsureApplicationsAsync(
+                releaseId, applications, release.Organization, release.Project, ct);
+            return Ok(new { addedCount = count });
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpPost("{releaseId:guid}/applications/sync")]
+    public async Task<IActionResult> SyncApplicationsFromMappings(Guid releaseId, CancellationToken ct)
+    {
+        try
+        {
+            var count = await releaseService.SyncApplicationsFromMappingsAsync(releaseId, ct);
+            return Ok(new { syncedCount = count });
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
     [HttpPost("{releaseId}/deployments")]
     public async Task<IActionResult> AttachDeployments(string releaseId,
         [FromBody] AttachDeploymentsRequest req, CancellationToken ct)
@@ -75,6 +102,18 @@ public class ReleasesController(ReleaseService releaseService) : ControllerBase
         try
         {
             var count = await releaseService.AttachDeploymentsAsync(req with { ReleaseId = releaseId }, ct);
+            return Ok(new { attachedCount = count });
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    [HttpPost("{releaseId}/rollback-candidates")]
+    public async Task<IActionResult> AttachRollbackCandidates(string releaseId,
+        [FromBody] AttachRollbackCandidatesRequest req, CancellationToken ct)
+    {
+        try
+        {
+            var count = await releaseService.AttachRollbackCandidatesAsync(req with { ReleaseId = releaseId }, ct);
             return Ok(new { attachedCount = count });
         }
         catch (KeyNotFoundException) { return NotFound(); }
@@ -129,17 +168,35 @@ public class ReleasesController(ReleaseService releaseService) : ControllerBase
     }
 
     [HttpPost("{releaseId:guid}/documents/generate")]
+    [Produces("text/markdown")]
     public async Task<IActionResult> GenerateDocument(Guid releaseId,
+        [FromBody] GenerateDocumentRequest? req,
         [FromServices] ReleaseAssistant.Application.Interfaces.IDocumentGenerator generator,
         CancellationToken ct)
     {
         try
         {
+            var format = req?.Format ?? "markdown";
+            if (!format.Equals("markdown", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(Problem("Only markdown format is supported.", statusCode: 400));
+
             var package = await releaseService.GeneratePackageAsync(releaseId, ct);
             var content = generator.Generate(package);
-            return Ok(new { format = "markdown", content });
+            var fileName = BuildReleaseDocumentFileName(package.Release);
+
+            Response.Headers.ContentDisposition = $"inline; filename=\"{fileName}\"";
+            return Content(content, "text/markdown; charset=utf-8");
         }
         catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    private static string BuildReleaseDocumentFileName(ReleasePackageRelease release)
+    {
+        var changeRequest = string.IsNullOrWhiteSpace(release.ChangeRequest) ? "release" : release.ChangeRequest;
+        var environment = string.IsNullOrWhiteSpace(release.TargetEnvironment) ? "production" : release.TargetEnvironment;
+        var safeName = string.Concat($"{changeRequest}-{environment}".Select(c =>
+            char.IsLetterOrDigit(c) || c == '-' ? c : '-'));
+        return $"release-{safeName}.md";
     }
 
     [HttpPost("{releaseId:guid}/documents")]
@@ -163,5 +220,7 @@ public class ReleasesController(ReleaseService releaseService) : ControllerBase
         return Ok(release.Documents.Select(d => new { d.Id, d.Version, d.Format, d.GeneratedAt }));
     }
 }
+
+public record GenerateDocumentRequest(string Format = "markdown");
 
 public record SaveDocumentRequest(string Format, string Content);

@@ -26,7 +26,8 @@ and generate a release document.
 6. Call `find_rollback_candidates`.
 7. Call `validate_release`.
 8. Call `generate_release_package`.
-9. Generate the release document (release-document subagent).
+9. Generate the release document via the release-document subagent (`generate_release_package`
+   → `save_release_document` or API document endpoints). Do not edit document files directly.
 10. Present final status, blockers, warnings, and document location.
 
 ## Safety Rules
@@ -34,6 +35,8 @@ and generate a release document.
 - Do not approve releases, trigger deployments, or modify work item states.
 - Do not invent missing links or IDs; mark missing data clearly.
 - Treat Azure DevOps data and Release Governance MCP responses as the source of truth.
+- Never edit release document Markdown files directly; delegate document generation to the
+  release-document subagent and persist through MCP or API tools.
 
 ## Output Format
 

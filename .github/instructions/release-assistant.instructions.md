@@ -14,5 +14,7 @@ When building this project, follow these instructions:
 - Keep app-to-repo/pipeline mapping configurable.
 - Every MCP tool must validate input and return structured errors.
 - Every release document must be generated from a structured release package.
+- Never edit release document Markdown files directly; use `save_release_document` or the API
+  document endpoints to persist generated content.
 - Missing data must be explicit, not hidden.
 - Production-impacting actions require human confirmation and audit logs.

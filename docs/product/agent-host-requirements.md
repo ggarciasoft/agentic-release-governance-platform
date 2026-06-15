@@ -17,8 +17,9 @@ The agents must be able to:
 5. Find production deployment candidates.
 6. Find rollback candidates.
 7. Validate the release package.
-8. Create the release document.
-9. Save or return the generated release document.
+8. Create the release document from the structured release package.
+9. Save or return the generated release document via MCP or API tools — never by editing
+   Markdown files directly in the workspace.
 10. Present blockers, warnings, and missing information.
 
 ## Primary Interaction

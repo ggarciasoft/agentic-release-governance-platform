@@ -34,17 +34,26 @@ everything up.
     },
     "azure-devops": {
       "command": "npx",
-      "args": ["-y", "@azure-devops/mcp"],
-      "env": {
-        "AZURE_DEVOPS_ORG": "your-org"
-      }
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "your-org",
+        "-d",
+        "core",
+        "work",
+        "work-items",
+        "repositories",
+        "--authentication",
+        "envvar"
+      ]
     }
   }
 }
 ```
 
-Approve the project MCP servers when Claude Code prompts. Provide the PAT through the
-`azure-devops` server's environment variable or your shell environment; never commit it.
+Approve the project MCP servers when Claude Code prompts. Replace `your-org` with your
+Azure DevOps organization name (positional CLI argument). Set `ADO_MCP_AUTH_TOKEN` to your PAT
+in your shell (`export ADO_MCP_AUTH_TOKEN=...`) before launching; never commit it.
 
 ### Subagent Format
 
@@ -95,8 +104,18 @@ Claude Desktop registers MCP servers in `claude_desktop_config.json`:
     },
     "azure-devops": {
       "command": "npx",
-      "args": ["-y", "@azure-devops/mcp"],
-      "env": { "AZURE_DEVOPS_ORG": "your-org" }
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "your-org",
+        "-d",
+        "core",
+        "work",
+        "work-items",
+        "repositories",
+        "--authentication",
+        "envvar"
+      ]
     }
   }
 }

@@ -92,6 +92,8 @@ Regardless of host, every agent must:
 - Mark missing data explicitly.
 - Keep validation deterministic (never override MCP validation results).
 - Never approve releases, trigger production deployments, or modify work item states in the MVP.
+- Never edit release document Markdown files directly. Generate and update documents only
+  through `generate_release_package` and `save_release_document` (or API document endpoints).
 - Require explicit human confirmation and audit logging for any production-impacting action.
 
 These rules are enforced in agent definitions and in the backend, not left to host behavior.

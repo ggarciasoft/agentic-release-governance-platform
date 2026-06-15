@@ -9,9 +9,16 @@ public static class DbSeeder
 {
     public static async Task SeedAsync(AppDbContext db, IConfiguration configuration)
     {
-        var hasAny = await db.ApplicationMappings.AnyAsync();
-        if (hasAny)
+        var hasValid = await db.ApplicationMappings
+            .AnyAsync(m => !string.IsNullOrWhiteSpace(m.ApplicationName));
+        if (hasValid)
             return;
+
+        var invalid = await db.ApplicationMappings
+            .Where(m => string.IsNullOrWhiteSpace(m.ApplicationName))
+            .ToListAsync();
+        if (invalid.Count > 0)
+            db.ApplicationMappings.RemoveRange(invalid);
 
         var org = configuration["AzureDevOps:Organization"] ?? "my-org";
         var project = configuration["AzureDevOps:Project"] ?? "my-project";

@@ -72,7 +72,8 @@ The target workflow is:
 6. Find latest successful production deployment as rollback candidate.
 7. Validate readiness.
 8. Generate structured release package.
-9. Generate release document.
+9. Generate release document through MCP or API tools (`save_release_document` / document
+   endpoints). Never edit release document Markdown files directly.
 10. Save document and present warnings/blockers.
 
 ## Testing Expectations

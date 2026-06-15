@@ -26,6 +26,10 @@ Generate a professional Markdown release document using only the structured rele
 - Do not invent missing IDs, links, statuses, approvers, or dates.
 - Mark missing values as `Missing`.
 - Keep language professional and concise.
+- Never edit existing release document files directly in the workspace. Generate content from
+  the release package and persist with `release-governance/save_release_document` (or
+  `POST /api/releases/{releaseId}/documents`). To update a document, re-run generation from
+  the current package — do not hand-edit Markdown files such as `release.md` or `release-*.md`.
 
 ## Default Document Structure
 

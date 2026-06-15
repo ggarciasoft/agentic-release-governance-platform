@@ -71,6 +71,9 @@ The Release Document Agent must receive a structured release package.
 - Include all blockers.
 - Include all warnings.
 - Use professional release-management language.
+- Never edit release document Markdown files directly. Generate content from the release
+  package and persist via `save_release_document` or API document endpoints. To update a
+  document, re-run generation from the current package.
 
 ## 6. Output
 

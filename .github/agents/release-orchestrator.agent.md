@@ -42,7 +42,7 @@ Given a change request, release tag, or release identifier, create or locate the
 9. Call `release-governance/find_rollback_candidates`.
 10. Call `release-governance/validate_release`.
 11. Call `release-governance/generate_release_package`.
-12. Ask the Document Agent to generate the release document.
+12. Ask the Document Agent to generate the release document via MCP or API tools.
 13. Present the final status, blockers, warnings, and document location.
 
 ## Safety Rules
@@ -53,6 +53,8 @@ Given a change request, release tag, or release identifier, create or locate the
 - Do not invent missing links or IDs.
 - Mark missing data clearly.
 - Treat Azure DevOps data and Release Governance MCP responses as the source of truth.
+- Never edit release document Markdown files directly; delegate to the Document Agent and
+  persist through `save_release_document` or API document endpoints.
 
 ## Output Format
 

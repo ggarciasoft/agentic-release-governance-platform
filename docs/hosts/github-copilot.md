@@ -52,6 +52,13 @@ Copilot reads MCP servers from VS Code workspace/user configuration (for example
 
 ```json
 {
+  "inputs": [
+    {
+      "id": "ado_org",
+      "type": "promptString",
+      "description": "Azure DevOps organization name (e.g. 'contoso')"
+    }
+  ],
   "servers": {
     "release-governance": {
       "type": "stdio",
@@ -66,7 +73,18 @@ Copilot reads MCP servers from VS Code workspace/user configuration (for example
     "azure-devops": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@azure-devops/mcp"]
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "${input:ado_org}",
+        "-d",
+        "core",
+        "work",
+        "work-items",
+        "repositories",
+        "--authentication",
+        "envvar"
+      ]
     }
   }
 }
@@ -99,6 +117,7 @@ tools unless the organization has approved stronger permissions.
 
 ## Secret Handling
 
-Do not hardcode PATs, OAuth secrets, API keys, connection strings, or storage keys. Use
-repository/organization agent secrets or variables. Locally, use environment variables or
-`dotnet user-secrets`. See [Security Model](../security/security-model.md).
+Do not hardcode PATs, OAuth secrets, API keys, connection strings, or storage keys. For the
+`azure-devops` MCP server, set `ADO_MCP_AUTH_TOKEN` via environment variable or repository
+secrets (`--authentication envvar`). Locally, use `export ADO_MCP_AUTH_TOKEN=...` or
+`dotnet user-secrets` for the backend API. See [Security Model](../security/security-model.md).

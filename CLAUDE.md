@@ -32,6 +32,10 @@ Use the `azure-devops` MCP server (read-only) for raw work items, PRs, and pipel
 - Never override or soften MCP validation results.
 - Never approve releases, trigger production deployments, or modify Azure DevOps work item
   states in the MVP.
+- Never edit release document Markdown files directly (for example `release.md`, `release-*.md`)
+  or patch document content by hand. Generate and update documents only through
+  `generate_release_package` and `save_release_document` (or the equivalent API document
+  endpoints). To refresh a document, re-run that workflow from the current release package.
 - Any production-impacting action requires explicit human confirmation and audit logging.
 
 ## Architecture Principles

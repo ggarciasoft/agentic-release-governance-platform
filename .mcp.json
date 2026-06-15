@@ -8,14 +8,25 @@
         "src/ReleaseAssistant.McpServer/ReleaseAssistant.McpServer.csproj"
       ],
       "env": {
-        "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5000"
+        "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5050"
       }
     },
     "azure-devops": {
       "command": "npx",
-      "args": ["-y", "@azure-devops/mcp"],
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "ggarciasoftOutlook",
+        "-d",
+        "core",
+        "work",
+        "work-items",
+        "repositories",
+        "--authentication",
+        "envvar"
+      ],
       "env": {
-        "AZURE_DEVOPS_ORG": "your-org"
+        "ADO_MCP_AUTH_TOKEN": ""
       }
     }
   }
