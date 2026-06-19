@@ -11,7 +11,8 @@ namespace ReleaseAssistant.McpServer.Tools;
 [McpServerToolType]
 public class ReleaseGovernanceTools(
     ReleaseService releaseService,
-    ApplicationMappingService mappingService)
+    ApplicationMappingService mappingService,
+    ReleaseAnalysisService analysisService)
 {
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web)
     {
@@ -36,11 +37,14 @@ public class ReleaseGovernanceTools(
         const string tool = "create_release_item";
         try
         {
-            var release = await releaseService.CreateAsync(new CreateReleaseRequest(
+            var (release, created) = await releaseService.CreateAsync(new CreateReleaseRequest(
                 releaseName, changeRequest, organization, project, targetEnvironment, applications));
 
-            var data = new { releaseId = release.Id.ToString(), status = release.Status.ToString() };
-            return Serialize(McpResponse<object>.Ok(tool, data));
+            var data = new { releaseId = release.Id.ToString(), status = release.Status.ToString(), created };
+            var warnings = created
+                ? Array.Empty<string>()
+                : new[] { $"Existing release found for {changeRequest}; returning releaseId {release.Id}." };
+            return Serialize(McpResponse<object>.Ok(tool, data, warnings));
         }
         catch (Exception ex)
         {
@@ -178,7 +182,7 @@ public class ReleaseGovernanceTools(
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "attach_deployments_to_release")]
-    [Description("Stores deployment candidates found in Azure DevOps pipelines.")]
+    [Description("Stores deployment candidates when data was collected outside this server. Prefer collect_release_deployments for classic release pipeline discovery.")]
     public async Task<string> AttachDeploymentsToReleaseAsync(
         [Description("The releaseId")] string releaseId,
         [Description("JSON array of deployments with applicationName, releaseName, environmentName, status, url")] string deploymentsJson)
@@ -205,11 +209,58 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // 6b. collect_release_deployments
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [McpServerTool(Name = "collect_release_deployments")]
+    [Description("Discovers current deployment candidates from Azure DevOps classic release pipelines for each mapped application and attaches them to the release. Requires AzureDevOps:Pat on the MCP server.")]
+    public async Task<string> CollectReleaseDeploymentsAsync(
+        [Description("The releaseId")] string releaseId)
+    {
+        const string tool = "collect_release_deployments";
+        if (!Guid.TryParse(releaseId, out var id))
+            return Serialize(McpResponse<object>.Fail(tool, "VALIDATION_ERROR", "Invalid releaseId."));
+
+        try
+        {
+            var result = await analysisService.AnalyzeDeploymentsAsync(id);
+            var release = await releaseService.GetAsync(id);
+            var deployments = (release?.Deployments ?? [])
+                .Select(d => new
+                {
+                    applicationName = d.ApplicationName,
+                    releaseName = d.AzureDevOpsReleaseName,
+                    environmentName = d.EnvironmentName,
+                    status = d.DeploymentStatus,
+                    url = d.DeploymentUrl,
+                    isCurrentDeployment = d.IsCurrentDeployment
+                })
+                .ToArray();
+
+            var data = new
+            {
+                attachedCount = result.AttachedCount,
+                step = result.Step,
+                deployments
+            };
+            return Serialize(McpResponse<object>.Ok(tool, data, result.Warnings));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Serialize(McpResponse<object>.Fail(tool, "RELEASE_NOT_FOUND", ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return Serialize(McpResponse<object>.Fail(tool, "COLLECTION_FAILED", ex.Message));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // 7. find_rollback_candidates
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "find_rollback_candidates")]
-    [Description("Returns rollback candidates already attached to the release. Does not query Azure DevOps. Collect rollback data via azure-devops MCP or POST /analyze/rollback, then attach before calling this tool.")]
+    [Description("Returns rollback candidates already attached to the release. Does not query Azure DevOps. Use collect_release_rollback_candidates to discover and attach rollback data first.")]
     public async Task<string> FindRollbackCandidatesAsync(
         [Description("The releaseId")] string releaseId)
     {
@@ -252,11 +303,57 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 7b. attach_rollback_candidates_to_release
+    // 7b. collect_release_rollback_candidates
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [McpServerTool(Name = "collect_release_rollback_candidates")]
+    [Description("Discovers prior successful classic release pipeline deployments for rollback and attaches one candidate per mapped application. Requires AzureDevOps:Pat on the MCP server.")]
+    public async Task<string> CollectReleaseRollbackCandidatesAsync(
+        [Description("The releaseId")] string releaseId)
+    {
+        const string tool = "collect_release_rollback_candidates";
+        if (!Guid.TryParse(releaseId, out var id))
+            return Serialize(McpResponse<object>.Fail(tool, "VALIDATION_ERROR", "Invalid releaseId."));
+
+        try
+        {
+            var result = await analysisService.AnalyzeRollbackAsync(id);
+            var release = await releaseService.GetAsync(id);
+            var rollbackCandidates = (release?.RollbackCandidates ?? [])
+                .Select(c => new
+                {
+                    applicationName = c.ApplicationName,
+                    releaseName = c.AzureDevOpsReleaseName,
+                    environmentName = c.EnvironmentName,
+                    status = c.DeploymentStatus,
+                    url = c.RollbackUrl
+                })
+                .ToArray();
+
+            var data = new
+            {
+                attachedCount = result.AttachedCount,
+                step = result.Step,
+                rollbackCandidates
+            };
+            return Serialize(McpResponse<object>.Ok(tool, data, result.Warnings));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Serialize(McpResponse<object>.Fail(tool, "RELEASE_NOT_FOUND", ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return Serialize(McpResponse<object>.Fail(tool, "COLLECTION_FAILED", ex.Message));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 7c. attach_rollback_candidates_to_release
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "attach_rollback_candidates_to_release")]
-    [Description("Stores rollback candidates found in Azure DevOps. One candidate per application per release.")]
+    [Description("Stores rollback candidates when data was collected outside this server. Prefer collect_release_rollback_candidates for classic release pipeline discovery.")]
     public async Task<string> AttachRollbackCandidatesToReleaseAsync(
         [Description("The releaseId")] string releaseId,
         [Description("JSON array of rollback candidates with applicationName, releaseName, environmentName, status, url")] string candidatesJson)

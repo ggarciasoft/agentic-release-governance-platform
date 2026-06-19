@@ -13,8 +13,13 @@ public class ReleaseService(
     IApplicationMappingRepository mappings,
     IValidationEngine validationEngine)
 {
-    public async Task<Release> CreateAsync(CreateReleaseRequest req, CancellationToken ct = default)
+    public async Task<(Release Release, bool Created)> CreateAsync(CreateReleaseRequest req, CancellationToken ct = default)
     {
+        var existing = await releases.GetByChangeRequestAsync(
+            req.ChangeRequest, req.Organization, req.Project, ct);
+        if (existing != null)
+            return (existing, false);
+
         var release = new Release
         {
             Name = req.ReleaseName,
@@ -42,7 +47,7 @@ public class ReleaseService(
 
         await releases.AddAsync(release, ct);
         await releases.SaveChangesAsync(ct);
-        return release;
+        return (release, true);
     }
 
     public async Task<Release?> GetAsync(Guid id, CancellationToken ct = default)

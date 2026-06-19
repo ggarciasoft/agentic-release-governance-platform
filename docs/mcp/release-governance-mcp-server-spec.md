@@ -178,7 +178,8 @@ Output:
 
 ### attach_deployments_to_release
 
-Stores deployment/release pipeline data.
+Stores deployment/release pipeline data that was collected outside this server. Prefer
+`collect_release_deployments` for classic release pipeline discovery.
 
 Input:
 
@@ -208,9 +209,43 @@ Output:
 }
 ```
 
+### collect_release_deployments
+
+Discovers current deployment candidates from Azure DevOps classic release pipelines for each
+mapped application and attaches them to the release.
+
+Input:
+
+```json
+{
+  "releaseId": "rel_20260613_001"
+}
+```
+
+Output:
+
+```json
+{
+  "success": true,
+  "attachedCount": 1,
+  "deployments": [
+    {
+      "applicationName": "Payments API",
+      "releaseName": "Payments API Release-20260613.1",
+      "environmentName": "Production",
+      "status": "succeeded",
+      "url": "https://dev.azure.com/..."
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}
+```
+
 ### find_rollback_candidates
 
-Finds the rollback candidate for each application.
+Returns rollback candidates already attached to the release. Does not query Azure DevOps.
+Call `collect_release_rollback_candidates` first to discover and attach rollback data.
 
 Input:
 
@@ -235,6 +270,39 @@ Output:
     }
   ],
   "warnings": []
+}
+```
+
+### collect_release_rollback_candidates
+
+Discovers prior successful classic release pipeline deployments for rollback and attaches
+one candidate per mapped application.
+
+Input:
+
+```json
+{
+  "releaseId": "rel_20260613_001"
+}
+```
+
+Output:
+
+```json
+{
+  "success": true,
+  "attachedCount": 1,
+  "rollbackCandidates": [
+    {
+      "applicationName": "Payments API",
+      "releaseName": "Payments API Release-20260601.3",
+      "environmentName": "Production",
+      "status": "Succeeded",
+      "url": "https://dev.azure.com/..."
+    }
+  ],
+  "warnings": [],
+  "errors": []
 }
 ```
 

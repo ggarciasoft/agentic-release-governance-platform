@@ -1,10 +1,17 @@
+using Microsoft.Extensions.Hosting;
 using ReleaseAssistant.Application;
 using ReleaseAssistant.AzureDevOps;
 using ReleaseAssistant.Infrastructure;
 using ReleaseAssistant.McpServer.Tools;
 using ReleaseAssistant.Agents;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = Host.CreateApplicationBuilder(args);
+
+// MCP stdio transport uses stdout exclusively for JSON-RPC; all logs must go to stderr.
+builder.Logging.AddConsole(options =>
+{
+    options.LogToStandardErrorThreshold = LogLevel.Trace;
+});
 
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? "Data Source=release-assistant.db";
@@ -17,13 +24,12 @@ builder.Services
 
 builder.Services
     .AddMcpServer()
-    .WithHttpTransport()
+    .WithStdioServerTransport()
     .WithToolsFromAssembly(typeof(ReleaseGovernanceTools).Assembly);
 
-var app = builder.Build();
+var host = builder.Build();
 
-// Ensure DB is created and seeded on startup
-using (var scope = app.Services.CreateScope())
+using (var scope = host.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ReleaseAssistant.Infrastructure.Data.AppDbContext>();
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
@@ -31,5 +37,4 @@ using (var scope = app.Services.CreateScope())
     await ReleaseAssistant.Infrastructure.Data.DbSeeder.SeedAsync(db, config);
 }
 
-app.MapMcp();
-app.Run();
+await host.RunAsync();

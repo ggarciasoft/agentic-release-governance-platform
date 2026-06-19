@@ -6,13 +6,11 @@ The Pipeline Agent finds build, release, and deployment pipeline information for
 
 ## 2. Responsibilities
 
-- Resolve application mapping
-- Find build pipelines
-- Find release pipelines
-- Find production deployment candidate
-- Find deployment status
-- Find approval status if available
-- Store deployment snapshot
+- Resolve application mapping via `get_application_mapping`
+- Discover classic release pipeline deployments via `collect_release_deployments`
+- Discover rollback candidates via `collect_release_rollback_candidates`
+- Read attached rollback rows via `find_rollback_candidates`
+- Store deployment and rollback snapshots on the release item
 
 ## 3. Required Inputs
 

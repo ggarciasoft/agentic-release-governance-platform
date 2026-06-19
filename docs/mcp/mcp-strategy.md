@@ -95,7 +95,7 @@ MCP tools should be:
 
 ## 6. MVP MCP Tools
 
-Implement the canonical 10 tools (see
+Implement the canonical release-governance tools (see
 [`release-governance-mcp-server-spec.md`](release-governance-mcp-server-spec.md)):
 
 - create_release_item
@@ -104,7 +104,10 @@ Implement the canonical 10 tools (see
 - attach_work_items_to_release
 - attach_pull_requests_to_release
 - attach_deployments_to_release
+- collect_release_deployments
 - find_rollback_candidates
+- collect_release_rollback_candidates
+- attach_rollback_candidates_to_release
 - validate_release
 - generate_release_package
 - save_release_document
@@ -141,7 +144,7 @@ Claude, or another MCP client). The same servers and tools serve every host; see
 | Release Orchestrator | `release-governance/*`, `azure-devops/*` |
 | Work Item Agent | `azure-devops/*`, `release-governance/attach_work_items_to_release` |
 | Pull Request Agent | `azure-devops/*`, `release-governance/attach_pull_requests_to_release` |
-| Pipeline Agent | `azure-devops/*`, `release-governance/get_application_mapping`, `release-governance/attach_deployments_to_release`, `release-governance/find_rollback_candidates` |
+| Pipeline Agent | `release-governance/get_application_mapping`, `release-governance/collect_release_deployments`, `release-governance/collect_release_rollback_candidates`, `release-governance/find_rollback_candidates` |
 | Validation Agent | `release-governance/validate_release`, `release-governance/generate_release_package` |
 | Release Document Agent | `release-governance/generate_release_package`, `release-governance/save_release_document` |
 | Communication Agent | `release-governance/generate_release_package` |

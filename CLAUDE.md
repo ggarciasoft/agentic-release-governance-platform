@@ -15,11 +15,13 @@ azure-devops-analysis-agent, validation-agent, and release-document-agent.
 
 ## MCP Tools
 
-The `release-governance` MCP server exposes 10 canonical tools (see
+The `release-governance` MCP server exposes these canonical tools (see
 `docs/mcp/mcp-tool-contracts.md`):
 `create_release_item`, `get_release_item`, `get_application_mapping`,
 `attach_work_items_to_release`, `attach_pull_requests_to_release`,
-`attach_deployments_to_release`, `find_rollback_candidates`, `validate_release`,
+`attach_deployments_to_release`, `collect_release_deployments`,
+`find_rollback_candidates`, `collect_release_rollback_candidates`,
+`attach_rollback_candidates_to_release`, `validate_release`,
 `generate_release_package`, `save_release_document`.
 
 Use the `azure-devops` MCP server (read-only) for raw work items, PRs, and pipeline data.

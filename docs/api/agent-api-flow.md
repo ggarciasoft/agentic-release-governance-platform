@@ -17,8 +17,8 @@ User in an MCP host (Copilot | Cursor | Claude)
   -> release-governance/attach_work_items_to_release
   -> azure-devops/find linked PRs
   -> release-governance/attach_pull_requests_to_release
-  -> azure-devops/find deployments
-  -> release-governance/attach_deployments_to_release
+  -> release-governance/collect_release_deployments
+  -> release-governance/collect_release_rollback_candidates
   -> release-governance/find_rollback_candidates
   -> release-governance/validate_release
   -> release-governance/generate_release_package

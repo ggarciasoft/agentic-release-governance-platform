@@ -43,11 +43,12 @@ It retrieves factual data only. It does not decide release readiness (that is th
 
 ## 4. Tools
 
-- `azure-devops/*` — read Azure DevOps work items, PRs, repositories, builds, and releases.
+- `azure-devops/*` — read Azure DevOps work items and pull requests.
 - `release-governance/get_application_mapping` — resolve application-to-pipeline mapping.
 - `release-governance/attach_work_items_to_release`
 - `release-governance/attach_pull_requests_to_release`
-- `release-governance/attach_deployments_to_release`
+- `release-governance/collect_release_deployments`
+- `release-governance/collect_release_rollback_candidates`
 - `release-governance/find_rollback_candidates`
 
 Tool contracts are defined in
@@ -60,10 +61,9 @@ Tool contracts are defined in
 3. Find pull requests linked to those work items.
 4. Attach the pull requests to the release item.
 5. Resolve the application mapping for each application.
-6. Find the current production deployment candidate per application.
-7. Attach the deployment data.
-8. Find rollback candidates per application.
-9. Return a structured summary.
+6. Call `collect_release_deployments` to discover and attach deployment candidates.
+7. Call `collect_release_rollback_candidates` to discover and attach rollback candidates.
+8. Return a structured summary.
 
 ## 6. Output
 

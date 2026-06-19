@@ -23,6 +23,16 @@ public class ReleaseRepository(AppDbContext db) : IReleaseRepository
             .Include(r => r.ToolCallLogs)
             .FirstOrDefaultAsync(r => r.Id == id, ct);
 
+    public Task<Release?> GetByChangeRequestAsync(string changeRequest, string organization, string project,
+        CancellationToken ct = default)
+        => db.Releases
+            .Where(r => r.DeletedAt == null
+                && r.ChangeRequest == changeRequest
+                && r.Organization == organization
+                && r.Project == project)
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
     public async Task<IReadOnlyList<Release>> ListAsync(CancellationToken ct = default)
         => await db.Releases
             .OrderByDescending(r => r.CreatedAt)

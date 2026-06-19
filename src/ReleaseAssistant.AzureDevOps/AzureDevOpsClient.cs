@@ -58,7 +58,9 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
         int releaseDefinitionId, string environmentName, string? org = null, string? project = null,
         CancellationToken ct = default)
     {
-        var releases = await GetReleasesForDefinitionAsync(releaseDefinitionId, environmentName, org, project, ct);
+        // No environment status filter — pick the most recent release for this definition
+        // regardless of whether it is staged, in-flight, or already deployed to Production.
+        var releases = await GetReleasesForDefinitionAsync(releaseDefinitionId, environmentName, environmentStatusFilter: null, org, project, ct);
         foreach (var release in releases.OrderByDescending(r => r.CreatedOn))
         {
             var env = FindEnvironment(release, environmentName);
@@ -73,14 +75,26 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
         int releaseDefinitionId, string environmentName, int? excludeReleaseId, string? org = null,
         string? project = null, CancellationToken ct = default)
     {
-        var releases = await GetReleasesForDefinitionAsync(releaseDefinitionId, environmentName, org, project, ct);
-        foreach (var release in releases.OrderByDescending(r => r.CreatedOn))
-        {
-            if (excludeReleaseId.HasValue && release.Id == excludeReleaseId.Value)
-                continue;
+        // No status filter — get all recent releases, exclude the current deployment,
+        // and prefer the most recent succeeded one; fall back to any prior release.
+        var releases = await GetReleasesForDefinitionAsync(releaseDefinitionId, environmentName, environmentStatusFilter: null, org, project, ct);
+        var candidates = releases
+            .OrderByDescending(r => r.CreatedOn)
+            .Where(r => !excludeReleaseId.HasValue || r.Id != excludeReleaseId.Value)
+            .ToList();
 
+        // Prefer succeeded environment first, then fall back to any prior release.
+        foreach (var release in candidates)
+        {
             var env = FindEnvironment(release, environmentName);
             if (env != null && IsSuccessfulEnvironment(env))
+                return ToEnvironmentDeployment(release, env);
+        }
+
+        foreach (var release in candidates)
+        {
+            var env = FindEnvironment(release, environmentName);
+            if (env != null)
                 return ToEnvironmentDeployment(release, env);
         }
 
@@ -134,15 +148,21 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
     }
 
     public async Task<IReadOnlyList<AdoRelease>> GetReleasesForDefinitionAsync(
-        int releaseDefinitionId, string environment, string? org = null, string? project = null,
-        CancellationToken ct = default)
+        int releaseDefinitionId, string environment, int? environmentStatusFilter,
+        string? org = null, string? project = null, CancellationToken ct = default)
     {
         var orgToUse = org ?? _opts.Organization;
         var projToUse = project ?? _opts.Project;
 
+        // $expand=environments ensures the environments array (with statuses) is always populated.
+        // environmentStatusFilter is omitted when null so the API returns releases of all statuses.
+        var filter = environmentStatusFilter.HasValue
+            ? $"&environmentStatusFilter={environmentStatusFilter.Value}"
+            : string.Empty;
+
         var url = $"https://vsrm.dev.azure.com/{orgToUse}/{projToUse}/_apis/release/releases"
-            + $"?definitionId={releaseDefinitionId}&environmentStatusFilter=6,8"
-            + $"&$top=10&api-version=7.1";
+            + $"?definitionId={releaseDefinitionId}{filter}"
+            + $"&$expand=environments&$top=10&api-version=7.1";
 
         var result = await GetAsync<AdoReleaseList>(url, ct);
         return result?.Value ?? Array.Empty<AdoRelease>();
@@ -162,7 +182,14 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
         AddAuthHeader(req);
         using var resp = await http.SendAsync(req, ct);
-        if (!resp.IsSuccessStatusCode) return default;
+        if (!resp.IsSuccessStatusCode)
+        {
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            throw new HttpRequestException(
+                $"ADO API GET failed: {(int)resp.StatusCode} {resp.StatusCode} — {url} — {TruncateBody(body)}",
+                inner: null,
+                resp.StatusCode);
+        }
         var json = await resp.Content.ReadAsStringAsync(ct);
         return JsonSerializer.Deserialize<T>(json, JsonOpts);
     }
@@ -173,10 +200,20 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
         AddAuthHeader(req);
         req.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         using var resp = await http.SendAsync(req, ct);
-        if (!resp.IsSuccessStatusCode) return default;
+        if (!resp.IsSuccessStatusCode)
+        {
+            var respBody = await resp.Content.ReadAsStringAsync(ct);
+            throw new HttpRequestException(
+                $"ADO API POST failed: {(int)resp.StatusCode} {resp.StatusCode} — {url} — {TruncateBody(respBody)}",
+                inner: null,
+                resp.StatusCode);
+        }
         var json = await resp.Content.ReadAsStringAsync(ct);
         return JsonSerializer.Deserialize<T>(json, JsonOpts);
     }
+
+    private static string TruncateBody(string body) =>
+        body.Length > 400 ? body[..400] + "…" : body;
 
     private void AddAuthHeader(HttpRequestMessage req)
     {

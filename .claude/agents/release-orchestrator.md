@@ -22,12 +22,12 @@ and generate a release document.
 2. Call `create_release_item` when a release item does not exist.
 3. Find work items and attach with `attach_work_items_to_release`.
 4. Find linked PRs and attach with `attach_pull_requests_to_release`.
-5. Find release/deployment data and attach with `attach_deployments_to_release`.
-6. Call `find_rollback_candidates`.
+5. Call `collect_release_deployments` to discover and attach deployment data.
+6. Call `collect_release_rollback_candidates`, then `find_rollback_candidates` if needed.
 7. Call `validate_release`.
 8. Call `generate_release_package`.
 9. Generate the release document via the release-document subagent (`generate_release_package`
-   → `save_release_document` or API document endpoints). Do not edit document files directly.
+   → `save_release_document`). Do not edit document files directly.
 10. Present final status, blockers, warnings, and document location.
 
 ## Safety Rules

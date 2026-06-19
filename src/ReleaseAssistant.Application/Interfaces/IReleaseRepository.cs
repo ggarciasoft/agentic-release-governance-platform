@@ -7,6 +7,7 @@ public interface IReleaseRepository
 {
     Task<Release?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Release?> GetByIdWithAllDataAsync(Guid id, CancellationToken ct = default);
+    Task<Release?> GetByChangeRequestAsync(string changeRequest, string organization, string project, CancellationToken ct = default);
     Task<IReadOnlyList<Release>> ListAsync(CancellationToken ct = default);
     Task AddAsync(Release release, CancellationToken ct = default);
     Task<int> AddWorkItemsAsync(Guid releaseId, IReadOnlyList<ReleaseWorkItem> workItems, CancellationToken ct = default);

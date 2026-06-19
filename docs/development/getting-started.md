@@ -134,7 +134,7 @@ Follow the [MCP-First MVP Roadmap](../roadmap/mcp-first-mvp-roadmap.md):
 
 1. Repository setup (host instructions, agents, prompts) — already present.
 2. Release Governance backend (entities and models).
-3. Release Governance MCP server (10 canonical tools).
+3. Release Governance MCP server (canonical tools, including classic release collection).
 4. Azure DevOps data collection.
 5. Validation and document generation.
 6. Review and hardening (audit logging, secret redaction, permissions, tests).
@@ -146,10 +146,19 @@ Follow the [MCP-First MVP Roadmap](../roadmap/mcp-first-mvp-roadmap.md):
   mode is enabled.
 - **MCP tools fail** — confirm the `release-governance` MCP server is running and registered,
   and that tool names match [`mcp-tool-contracts.md`](../mcp/mcp-tool-contracts.md).
-- **Azure DevOps 401/403** — verify the PAT scopes and that `ADO_MCP_AUTH_TOKEN` is set in
-  your environment when using `--authentication envvar` (not `AZURE_DEVOPS_ORG`, which this
-  MCP server does not read).
+- **`release-governance` stuck on "Waiting for initialize" / "Failed to parse message"** —
+  Cursor starts MCP servers over **stdio** (stdin/stdout JSON-RPC). The server must use
+  `WithStdioServerTransport()` and log only to **stderr**. Use `--no-launch-profile` in
+  `mcp.json` args so `dotnet run` does not print launch-settings text to stdout.
+- **Azure DevOps 401/403 on classic release collection** — configure `AzureDevOps:Pat` via user
+  secrets on `ReleaseAssistant.McpServer` (secrets ID in its `.csproj`) as well as on the API.
+  Classic release pipeline tools (`collect_release_deployments`,
+  `collect_release_rollback_candidates`) query `vsrm.dev.azure.com` from the MCP server process.
 - **azure-devops MCP exits immediately** — the organization must be a **positional CLI
   argument** (`npx -y @azure-devops/mcp your-org`), not an environment variable.
 - **Empty work item results** — confirm the Change Request value is applied as a tag on the
   work items (`System.Tags`).
+- **`azure-devops` MCP yellow / never connects in Cursor** — avoid `-d all` (loads 80+ tools
+  and often times out). Use `-d core work work-items repositories` for this project. Pre-install
+  with `npm install -g @azure-devops/mcp` if `npx` cold start is slow. JSON `"Starting Azure
+  DevOps MCP Server"` lines in MCP logs are info-level stderr output, not necessarily errors.

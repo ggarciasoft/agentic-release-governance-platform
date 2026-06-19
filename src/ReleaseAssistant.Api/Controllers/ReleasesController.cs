@@ -13,9 +13,11 @@ public class ReleasesController(ReleaseService releaseService, ReleaseAnalysisSe
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateReleaseRequest req, CancellationToken ct)
     {
-        var release = await releaseService.CreateAsync(req, ct);
+        var (release, created) = await releaseService.CreateAsync(req, ct);
+        if (!created)
+            return Ok(new { id = release.Id, name = release.Name, status = release.Status.ToString(), created = false });
         return CreatedAtAction(nameof(GetById), new { releaseId = release.Id },
-            new { id = release.Id, name = release.Name, status = release.Status.ToString() });
+            new { id = release.Id, name = release.Name, status = release.Status.ToString(), created = true });
     }
 
     [HttpGet("{releaseId:guid}")]

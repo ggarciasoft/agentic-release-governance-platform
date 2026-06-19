@@ -5,17 +5,18 @@
       "args": [
         "run",
         "--project",
-        "src/ReleaseAssistant.McpServer/ReleaseAssistant.McpServer.csproj"
+        "src/ReleaseAssistant.McpServer/ReleaseAssistant.McpServer.csproj",
+        "--no-launch-profile"
       ],
       "env": {
-        "RELEASE_ASSISTANT_API_BASE_URL": "http://localhost:5050"
+        "AzureDevOps__Organization": "",
+        "AzureDevOps__Project": "",
+        "AzureDevOps__Pat": ""
       }
     },
     "azure-devops": {
-      "command": "npx",
+      "command": "C:\\Users\\..\\AppData\\Roaming\\npm\\mcp-server-azuredevops.cmd",
       "args": [
-        "-y",
-        "@azure-devops/mcp",
         "ggarciasoftOutlook",
         "-d",
         "core",
@@ -26,7 +27,8 @@
         "envvar"
       ],
       "env": {
-        "ADO_MCP_AUTH_TOKEN": ""
+        "ADO_MCP_AUTH_TOKEN": "",
+        "NODE_OPTIONS": "--use-system-ca"
       }
     }
   }

@@ -21,8 +21,8 @@ Collect the Azure DevOps data needed to prepare a release package.
 3. Find linked PRs.
 4. Attach PRs to the release item.
 5. Get application mappings.
-6. Find deployment candidates and attach deployment data.
-7. Find rollback candidates.
+6. Call `collect_release_deployments` to discover and attach deployment data.
+7. Call `collect_release_rollback_candidates` to discover and attach rollback candidates.
 8. Return a structured summary.
 
 ## Safety Rules

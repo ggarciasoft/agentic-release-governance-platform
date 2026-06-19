@@ -47,8 +47,11 @@ Failure:
 | 3 | `get_application_mapping` | read | Resolve application-to-repo/pipeline mapping |
 | 4 | `attach_work_items_to_release` | write | Persist collected work items |
 | 5 | `attach_pull_requests_to_release` | write | Persist collected pull requests |
-| 6 | `attach_deployments_to_release` | write | Persist collected deployments |
-| 7 | `find_rollback_candidates` | read | Resolve rollback candidate per application |
+| 6 | `attach_deployments_to_release` | write | Persist manually collected deployments |
+| 6b | `collect_release_deployments` | read/write | Discover classic release deployments from Azure DevOps and attach |
+| 7 | `find_rollback_candidates` | read | Return rollback candidates already attached to the release |
+| 7b | `collect_release_rollback_candidates` | read/write | Discover classic release rollback candidates from Azure DevOps and attach |
+| 7c | `attach_rollback_candidates_to_release` | write | Persist manually collected rollback candidates |
 | 8 | `validate_release` | read | Run deterministic validation rules |
 | 9 | `generate_release_package` | read | Build the structured release package |
 | 10 | `save_release_document` | write | Store a generated release document |
@@ -254,12 +257,52 @@ Stores deployment/release pipeline data.
 }
 ```
 
+## 6b. collect_release_deployments
+
+Discovers current deployment candidates from Azure DevOps **classic release pipelines**
+(`vsrm.dev.azure.com`) for each application on the release that has a `releaseDefinitionId`
+mapping, then attaches them to the release.
+
+Requires `AzureDevOps:Pat` (and organization/project) configured for the MCP server process.
+
+### Input
+
+```json
+{
+  "releaseId": "rel_20260613_001"
+}
+```
+
+### Output
+
+```json
+{
+  "success": true,
+  "tool": "collect_release_deployments",
+  "data": {
+    "attachedCount": 1,
+    "step": "deployments",
+    "deployments": [
+      {
+        "applicationName": "Payments API",
+        "releaseName": "Payments API Release-20260613.1",
+        "environmentName": "Production",
+        "status": "succeeded",
+        "url": "https://dev.azure.com/...",
+        "isCurrentDeployment": true
+      }
+    ]
+  },
+  "warnings": [],
+  "errors": []
+}
+```
+
 ## 7. find_rollback_candidates
 
 Returns rollback candidates **already attached** to the release. This tool does **not** query
-Azure DevOps. Collect rollback data first (via the `azure-devops` MCP server or
-`POST /api/releases/{releaseId}/analyze/rollback`), attach with `attach_rollback_candidates`,
-then call this tool to read the attached rows.
+Azure DevOps. Call `collect_release_rollback_candidates` first (or attach manually with
+`attach_rollback_candidates_to_release`), then call this tool to read the attached rows.
 
 The intended rollback candidate is the latest successful production deployment before the
 current production deployment candidate.
@@ -285,6 +328,46 @@ current production deployment candidate.
         "releaseName": "Payments API Release-20260601.3",
         "environmentName": "Production",
         "status": "Succeeded",
+        "url": "https://dev.azure.com/..."
+      }
+    ]
+  },
+  "warnings": [],
+  "errors": []
+}
+```
+
+## 7b. collect_release_rollback_candidates
+
+Discovers the prior successful classic release pipeline deployment for each mapped application
+(excluding the current deployment candidate when known) and attaches one rollback candidate
+per application.
+
+Requires `AzureDevOps:Pat` (and organization/project) configured for the MCP server process.
+
+### Input
+
+```json
+{
+  "releaseId": "rel_20260613_001"
+}
+```
+
+### Output
+
+```json
+{
+  "success": true,
+  "tool": "collect_release_rollback_candidates",
+  "data": {
+    "attachedCount": 1,
+    "step": "rollback",
+    "rollbackCandidates": [
+      {
+        "applicationName": "Payments API",
+        "releaseName": "Payments API Release-20260601.3",
+        "environmentName": "Production",
+        "status": "succeeded",
         "url": "https://dev.azure.com/..."
       }
     ]

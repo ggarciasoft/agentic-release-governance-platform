@@ -177,15 +177,21 @@ all-in-one analysis agent into specialists.
 ## Custom MCP Server
 
 The `release-governance` MCP server lives in `src/ReleaseAssistant.McpServer` and exposes
-10 canonical tools:
+these canonical tools:
 
 ```text
-create_release_item          get_release_item
-get_application_mapping      attach_work_items_to_release
+create_release_item              get_release_item
+get_application_mapping          attach_work_items_to_release
 attach_pull_requests_to_release  attach_deployments_to_release
-find_rollback_candidates     validate_release
-generate_release_package     save_release_document
+collect_release_deployments      find_rollback_candidates
+collect_release_rollback_candidates  attach_rollback_candidates_to_release
+validate_release                 generate_release_package
+save_release_document
 ```
+
+Classic release pipeline discovery uses `collect_release_deployments` and
+`collect_release_rollback_candidates` (queries `vsrm.dev.azure.com` via the MCP server's
+`AzureDevOps:Pat` configuration).
 
 See [`docs/mcp/mcp-tool-contracts.md`](docs/mcp/mcp-tool-contracts.md) for full input/output
 contracts and [`docs/mcp/release-governance-mcp-server-spec.md`](docs/mcp/release-governance-mcp-server-spec.md)
@@ -205,8 +211,9 @@ See [`docs/api/api-specification.md`](docs/api/api-specification.md) for full co
 | Validation | `POST /api/releases/{id}/validate` |
 | Documents | `POST /api/releases/{id}/documents/generate`, `/documents` |
 
-Configure `AzureDevOps:Pat` (user secrets) for analyze endpoints; set `ADO_MCP_AUTH_TOKEN` in
-MCP host config for the `azure-devops` MCP server.
+Configure `AzureDevOps:Pat` (user secrets) on the API and MCP server for classic release
+pipeline collection; set `ADO_MCP_AUTH_TOKEN` in MCP host config for the `azure-devops` MCP
+server (work items and pull requests).
 
 ## Safety Rules
 

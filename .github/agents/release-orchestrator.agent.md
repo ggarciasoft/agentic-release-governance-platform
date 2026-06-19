@@ -37,12 +37,12 @@ Given a change request, release tag, or release identifier, create or locate the
 4. Attach work items to the release through `release-governance/attach_work_items_to_release`.
 5. Use Azure DevOps MCP tools or delegate to the Pull Request Agent to find PRs.
 6. Attach PRs through `release-governance/attach_pull_requests_to_release`.
-7. Use Azure DevOps MCP tools or delegate to the Pipeline Agent to find release/deployment pipeline data.
-8. Attach deployments through `release-governance/attach_deployments_to_release`.
-9. Call `release-governance/find_rollback_candidates`.
+7. Delegate to the Pipeline Agent or call `release-governance/collect_release_deployments`.
+8. Call `release-governance/collect_release_rollback_candidates`.
+9. Call `release-governance/find_rollback_candidates` when you need to read attached rows.
 10. Call `release-governance/validate_release`.
 11. Call `release-governance/generate_release_package`.
-12. Ask the Document Agent to generate the release document via MCP or API tools.
+12. Ask the Document Agent to generate the release document via MCP tools.
 13. Present the final status, blockers, warnings, and document location.
 
 ## Safety Rules

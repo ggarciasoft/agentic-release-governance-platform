@@ -76,6 +76,9 @@ the MVP. They receive already-collected data; they do not call Azure DevOps them
 | `POST /api/releases/{releaseId}/work-items` | `attach_work_items_to_release` |
 | `POST /api/releases/{releaseId}/pull-requests` | `attach_pull_requests_to_release` |
 | `POST /api/releases/{releaseId}/deployments` | `attach_deployments_to_release` |
+| `POST /api/releases/{releaseId}/analyze/deployments` | `collect_release_deployments` |
+| `POST /api/releases/{releaseId}/rollback-candidates` | `attach_rollback_candidates_to_release` |
+| `POST /api/releases/{releaseId}/analyze/rollback` | `collect_release_rollback_candidates` |
 | `POST /api/releases/{releaseId}/rollback-candidates/discover` | `find_rollback_candidates` |
 | `GET /api/releases/{releaseId}/package` | `generate_release_package` |
 

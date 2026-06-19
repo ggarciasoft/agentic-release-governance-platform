@@ -24,13 +24,13 @@ and generate a release document.
 3. Find work items (via `azure-devops` or the work-item role) and attach them with
    `release-governance/attach_work_items_to_release`.
 4. Find linked PRs and attach them with `release-governance/attach_pull_requests_to_release`.
-5. Find release/deployment data and attach with
-   `release-governance/attach_deployments_to_release`.
-6. Call `release-governance/find_rollback_candidates`.
+5. Find release/deployment data with `release-governance/collect_release_deployments`.
+6. Call `release-governance/collect_release_rollback_candidates`, then
+   `release-governance/find_rollback_candidates` if you need to read attached rows.
 7. Call `release-governance/validate_release`.
 8. Call `release-governance/generate_release_package`.
 9. Generate the release document via the release-document role (`generate_release_package` →
-   `save_release_document` or API document endpoints). Do not edit document files directly.
+   `save_release_document`). Do not edit document files directly.
 10. Present final status, blockers, warnings, and document location.
 
 ## Safety Rules
