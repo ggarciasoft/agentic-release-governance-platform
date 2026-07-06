@@ -11,7 +11,7 @@ import type {
   CreateReleaseRequest,
 } from './types';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5050';
 
 async function apiFetch<T>(
   path: string,
@@ -108,22 +108,18 @@ export const api = {
     getPackage: (releaseId: string) =>
       apiFetch<ReleasePackage>(`/api/releases/${releaseId}/package`),
 
-    generateDocument: (releaseId: string) =>
-      apiFetch<string>(`/api/releases/${releaseId}/documents/generate`, {
+    generateDocument: async (releaseId: string): Promise<string> => {
+      const res = await fetch(`${BASE_URL}/api/releases/${releaseId}/documents/generate`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ format: 'markdown' }),
-        // response is text/markdown
-        headers: { 'Content-Type': 'application/json' } as Record<string, string>,
-      }).then(async () => {
-        // Need raw text for markdown
-        const res = await fetch(`${BASE_URL}/api/releases/${releaseId}/documents/generate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ format: 'markdown' }),
-        });
-        if (!res.ok) throw new Error(`Failed to generate document: ${res.status}`);
-        return res.text();
-      }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Failed to generate document: ${res.status}`);
+      }
+      return res.text();
+    },
 
     saveDocument: (releaseId: string, format: string, content: string) =>
       apiFetch<{ documentId: string; version: number; status: string }>(

@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { api } from '@/lib/api';
 import type { ReleaseDetail, ValidationSummary } from '@/lib/types';
 
@@ -517,9 +519,9 @@ function DocumentsTab({
               {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save Document'}
             </button>
           </div>
-          <pre className="p-4 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-300 overflow-x-auto max-h-[600px] overflow-y-auto font-mono whitespace-pre-wrap">
-            {markdown}
-          </pre>
+          <div className="p-5 bg-gray-900 border border-gray-800 rounded-lg max-h-[600px] overflow-y-auto prose prose-invert prose-sm max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+          </div>
         </div>
       )}
 

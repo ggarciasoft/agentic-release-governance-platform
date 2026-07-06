@@ -116,7 +116,42 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 4. attach_work_items_to_release
+    // 4. ensure_applications_on_release
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [McpServerTool(Name = "ensure_applications_on_release")]
+    [Description("Adds one or more application names to an existing release and resolves their pipeline mappings. " +
+                 "Call this before collect_release_deployments when applications were not supplied at creation time.")]
+    public async Task<string> EnsureApplicationsOnReleaseAsync(
+        [Description("The releaseId")] string releaseId,
+        [Description("List of application names to add to the release")] IReadOnlyList<string> applicationNames)
+    {
+        const string tool = "ensure_applications_on_release";
+        try
+        {
+            if (!Guid.TryParse(releaseId, out var id))
+                return Serialize(McpResponse<object>.Fail(tool, "VALIDATION_ERROR", "releaseId must be a valid GUID."));
+
+            var release = await releaseService.GetAsync(id)
+                ?? throw new KeyNotFoundException($"Release {releaseId} not found.");
+
+            var count = await releaseService.EnsureApplicationsAsync(
+                id, applicationNames, release.Organization, release.Project);
+
+            return Serialize(McpResponse<object>.Ok(tool, new { addedCount = count }));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Serialize(McpResponse<object>.Fail(tool, "RELEASE_NOT_FOUND", ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return Serialize(McpResponse<object>.Fail(tool, "ENSURE_FAILED", ex.Message));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 5. attach_work_items_to_release
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "attach_work_items_to_release")]
@@ -147,7 +182,7 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 5. attach_pull_requests_to_release
+    // 6. attach_pull_requests_to_release
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "attach_pull_requests_to_release")]
@@ -178,7 +213,7 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 6. attach_deployments_to_release
+    // 7. attach_deployments_to_release
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "attach_deployments_to_release")]
@@ -256,7 +291,7 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 7. find_rollback_candidates
+    // 8. find_rollback_candidates
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "find_rollback_candidates")]
@@ -380,7 +415,7 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 8. validate_release
+    // 9. validate_release
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "validate_release")]
@@ -411,7 +446,7 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 9. generate_release_package
+    // 10. generate_release_package
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "generate_release_package")]
@@ -435,7 +470,7 @@ public class ReleaseGovernanceTools(
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 10. save_release_document
+    // 11. save_release_document
     // ─────────────────────────────────────────────────────────────────────────
 
     [McpServerTool(Name = "save_release_document")]

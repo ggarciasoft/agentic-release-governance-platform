@@ -26,9 +26,10 @@ Copilot, and Claude. See `docs/hosts/agent-hosts-overview.md`.
   states in the MVP.
 - Never edit release document Markdown files directly (for example `release.md`, `release-*.md`)
   or patch document content by hand. Generate and update documents only through
-  `generate_release_package` and `save_release_document` (or the equivalent API document
-  endpoints). To refresh a document, re-run that workflow from the current release package.
+  `generate_release_package` and `save_release_document`. 
+  To refresh a document, re-run that workflow from the current release package.
 - Any production-impacting action requires explicit human confirmation and audit logging.
+- Never use the API by your own, always try to use MCP availables. If is not possible, ask to the user.
 
 ## MCP Tools
 
