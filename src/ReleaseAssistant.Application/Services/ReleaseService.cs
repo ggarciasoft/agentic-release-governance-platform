@@ -103,7 +103,8 @@ public class ReleaseService(
                 CreatedAtFromAzureDevOps = pr.CreatedAt,
                 CompletedAtFromAzureDevOps = pr.CompletedAt,
                 Url = pr.Url,
-                RawJson = pr.RawJson
+                RawJson = pr.RawJson,
+                MergeCommitId = pr.MergeCommitId
             };
 
             foreach (var wiId in pr.LinkedWorkItemIds ?? Array.Empty<int>())

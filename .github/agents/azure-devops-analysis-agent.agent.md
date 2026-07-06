@@ -19,10 +19,11 @@ Collect the Azure DevOps data needed to prepare a release package.
 
 1. Search work items by CR/tag.
 2. Attach work items to the release item.
-3. Find linked PRs.
-4. Attach PRs to the release item.
+3. Find linked PRs. For each PR, capture `lastMergeSourceCommit.commitId` from the Azure DevOps response.
+4. Attach PRs to the release item, including `mergeCommitId` (the `lastMergeSourceCommit.commitId`).
+   **PRs must be attached before calling `collect_release_deployments`.**
 5. Get application mappings.
-6. Find deployment candidates.
+6. Call `collect_release_deployments` — the server uses the stored merge commits to match the correct pipeline release.
 7. Attach deployment data.
 8. Find rollback candidates.
 9. Return a structured summary.

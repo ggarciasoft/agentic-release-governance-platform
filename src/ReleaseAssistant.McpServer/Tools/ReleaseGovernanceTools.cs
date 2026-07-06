@@ -189,7 +189,7 @@ public class ReleaseGovernanceTools(
     [Description("Stores pull requests collected by the azure-devops MCP server.")]
     public async Task<string> AttachPullRequestsToReleaseAsync(
         [Description("The releaseId")] string releaseId,
-        [Description("JSON array of pull requests with pullRequestId, repositoryName, title, status, targetBranch, url")] string pullRequestsJson)
+        [Description("JSON array of pull requests with pullRequestId, repositoryName, title, status, targetBranch, url, and mergeCommitId (the lastMergeSourceCommit.commitId from the Azure DevOps PR response — required for correct deployment correlation)")] string pullRequestsJson)
     {
         const string tool = "attach_pull_requests_to_release";
         try

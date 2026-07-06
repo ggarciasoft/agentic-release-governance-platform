@@ -13,7 +13,11 @@ public record AdoPullRequest(
     [property: JsonPropertyName("creationDate")] DateTime? CreationDate,
     [property: JsonPropertyName("closedDate")] DateTime? ClosedDate,
     [property: JsonPropertyName("url")] string Url,
-    [property: JsonPropertyName("repository")] AdoRepository? Repository);
+    [property: JsonPropertyName("repository")] AdoRepository? Repository,
+    [property: JsonPropertyName("lastMergeSourceCommit")] AdoCommitRef? LastMergeSourceCommit);
+
+public record AdoCommitRef(
+    [property: JsonPropertyName("commitId")] string CommitId);
 
 public record AdoRepository(
     [property: JsonPropertyName("id")] string Id,

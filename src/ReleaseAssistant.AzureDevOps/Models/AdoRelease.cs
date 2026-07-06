@@ -7,8 +7,19 @@ public record AdoRelease(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("releaseDefinition")] AdoReleaseDefinitionRef? ReleaseDefinition,
     [property: JsonPropertyName("environments")] IReadOnlyList<AdoReleaseEnvironment>? Environments,
+    [property: JsonPropertyName("artifacts")] IReadOnlyList<AdoReleaseArtifact>? Artifacts,
     [property: JsonPropertyName("createdOn")] DateTime? CreatedOn,
     [property: JsonPropertyName("_links")] AdoLinks? Links);
+
+public record AdoReleaseArtifact(
+    [property: JsonPropertyName("type")] string Type,
+    [property: JsonPropertyName("definitionReference")] AdoArtifactDefinitionReference? DefinitionReference);
+
+public record AdoArtifactDefinitionReference(
+    [property: JsonPropertyName("sourceVersion")] AdoArtifactValue? SourceVersion);
+
+public record AdoArtifactValue(
+    [property: JsonPropertyName("id")] string Id);
 
 public record AdoReleaseDefinitionRef(
     [property: JsonPropertyName("id")] int Id,

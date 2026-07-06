@@ -55,17 +55,40 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
     }
 
     public async Task<AdoEnvironmentDeployment?> FindLatestEnvironmentDeploymentAsync(
-        int releaseDefinitionId, string environmentName, string? org = null, string? project = null,
+        int releaseDefinitionId, string environmentName,
+        IReadOnlyCollection<string>? mergeCommits,
+        string? org = null, string? project = null,
         CancellationToken ct = default)
     {
-        // No environment status filter — pick the most recent release for this definition
-        // regardless of whether it is staged, in-flight, or already deployed to Production.
         var releases = await GetReleasesForDefinitionAsync(releaseDefinitionId, environmentName, environmentStatusFilter: null, org, project, ct);
-        foreach (var release in releases.OrderByDescending(r => r.CreatedOn))
+        var ordered = releases.OrderByDescending(r => r.CreatedOn).ToList();
+
+        // 1. If we have known merge commits, find the first release whose artifact commit matches.
+        if (mergeCommits is { Count: > 0 })
+        {
+            var normalized = mergeCommits
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Select(c => c.Trim().ToLowerInvariant())
+                .ToHashSet();
+
+            foreach (var release in ordered)
+            {
+                var artifactCommit = GetArtifactCommit(release);
+                if (artifactCommit != null && normalized.Contains(artifactCommit))
+                {
+                    var env = FindEnvironment(release, environmentName);
+                    if (env != null)
+                        return ToEnvironmentDeployment(release, env, commitMatched: true);
+                }
+            }
+        }
+
+        // 2. Fall back to the most recent release (with a flag so callers can warn).
+        foreach (var release in ordered)
         {
             var env = FindEnvironment(release, environmentName);
             if (env != null)
-                return ToEnvironmentDeployment(release, env);
+                return ToEnvironmentDeployment(release, env, commitMatched: false);
         }
 
         return null;
@@ -111,13 +134,19 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
         return status.Equals("succeeded", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static AdoEnvironmentDeployment ToEnvironmentDeployment(AdoRelease release, AdoReleaseEnvironment env)
+    private static AdoEnvironmentDeployment ToEnvironmentDeployment(AdoRelease release, AdoReleaseEnvironment env, bool commitMatched = false)
     {
         var status = env.Status ?? env.DeploySteps?.LastOrDefault()?.Status ?? string.Empty;
         var completedAt = env.DeploySteps?.LastOrDefault()?.LastModifiedOn;
         var url = release.Links?.Web?.Href ?? string.Empty;
-        return new AdoEnvironmentDeployment(release, env, status, url, completedAt);
+        return new AdoEnvironmentDeployment(release, env, status, url, completedAt, commitMatched);
     }
+
+    private static string? GetArtifactCommit(AdoRelease release) =>
+        release.Artifacts?
+            .Select(a => a.DefinitionReference?.SourceVersion?.Id)
+            .FirstOrDefault(id => !string.IsNullOrWhiteSpace(id))
+            ?.Trim().ToLowerInvariant();
 
     public async Task<IReadOnlyList<AdoPullRequest>> GetPullRequestsForWorkItemAsync(
         AdoWorkItem workItem, string? org = null, string? project = null, CancellationToken ct = default)
@@ -147,6 +176,25 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
         return results;
     }
 
+    public async Task<AdoRelease?> GetReleaseByIdAsync(
+        int releaseId, string? org = null, string? project = null, CancellationToken ct = default)
+    {
+        var orgToUse = org ?? _opts.Organization;
+        var projToUse = project ?? _opts.Project;
+        var url = $"https://vsrm.dev.azure.com/{orgToUse}/{projToUse}/_apis/release/releases/{releaseId}"
+            + "?$expand=environments,artifacts&api-version=7.1";
+        return await GetAsync<AdoRelease>(url, ct);
+    }
+
+    public static int ExtractReleaseIdFromArtifactUrl(string url)
+    {
+        // vstfs:///ReleaseManagement/Release/123
+        if (!url.Contains("ReleaseManagement", StringComparison.OrdinalIgnoreCase))
+            return 0;
+        var parts = url.Split('/');
+        return parts.Length > 0 && int.TryParse(parts[^1], out var id) ? id : 0;
+    }
+
     public async Task<IReadOnlyList<AdoRelease>> GetReleasesForDefinitionAsync(
         int releaseDefinitionId, string environment, int? environmentStatusFilter,
         string? org = null, string? project = null, CancellationToken ct = default)
@@ -154,7 +202,7 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
         var orgToUse = org ?? _opts.Organization;
         var projToUse = project ?? _opts.Project;
 
-        // $expand=environments ensures the environments array (with statuses) is always populated.
+        // $expand=environments,artifacts ensures both arrays are populated.
         // environmentStatusFilter is omitted when null so the API returns releases of all statuses.
         var filter = environmentStatusFilter.HasValue
             ? $"&environmentStatusFilter={environmentStatusFilter.Value}"
@@ -162,7 +210,7 @@ public class AzureDevOpsClient(HttpClient http, IOptions<AzureDevOpsOptions> opt
 
         var url = $"https://vsrm.dev.azure.com/{orgToUse}/{projToUse}/_apis/release/releases"
             + $"?definitionId={releaseDefinitionId}{filter}"
-            + $"&$expand=environments&$top=10&api-version=7.1";
+            + $"&$expand=environments,artifacts&$top=10&api-version=7.1";
 
         var result = await GetAsync<AdoReleaseList>(url, ct);
         return result?.Value ?? Array.Empty<AdoRelease>();

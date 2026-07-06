@@ -14,7 +14,8 @@ public record PullRequestData(
     DateTime? CompletedAt = null,
     string Url = "",
     string RawJson = "{}",
-    IReadOnlyList<int>? LinkedWorkItemIds = null);
+    IReadOnlyList<int>? LinkedWorkItemIds = null,
+    string? MergeCommitId = null);
 
 public record AttachPullRequestsRequest(
     string ReleaseId,

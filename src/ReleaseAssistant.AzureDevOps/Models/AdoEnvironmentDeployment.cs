@@ -7,4 +7,5 @@ public record AdoEnvironmentDeployment(
     AdoReleaseEnvironment Environment,
     string EnvironmentStatus,
     string ReleaseUrl,
-    DateTime? CompletedAt);
+    DateTime? CompletedAt,
+    bool CommitMatched = false);

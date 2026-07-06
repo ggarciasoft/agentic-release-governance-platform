@@ -119,8 +119,38 @@ public class ReleaseAnalysisService(
         if (apps.Count == 0)
             return new AnalysisStepResult("deployments", 0, warnings);
 
-        var deployments = await adoCollector.CollectCurrentDeploymentsAsync(
-            apps, release.Organization, release.Project, ct);
+        // Collect merge commits from attached PRs so the fallback collector can correlate by artifact.
+        var mergeCommits = release.PullRequests
+            .Where(pr => !string.IsNullOrWhiteSpace(pr.MergeCommitId))
+            .Select(pr => pr.MergeCommitId!)
+            .Distinct()
+            .ToList();
+
+        // Primary: use deployment links from work items (set by ADO "deployment status reporting").
+        var workItemIds = release.WorkItems.Select(w => w.AzureDevOpsWorkItemId).ToList();
+        var linkedDeployments = await adoCollector.CollectDeploymentsFromWorkItemLinksAsync(
+            workItemIds, apps, release.Organization, release.Project, ct);
+
+        var coveredApps = linkedDeployments
+            .Select(d => d.ApplicationName)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Fallback: for apps with no deployment link on any work item, use the previous strategy.
+        var fallbackApps = apps
+            .Where(a => !coveredApps.Contains(a.ApplicationName))
+            .ToList();
+
+        IReadOnlyList<DeploymentData> fallbackDeployments = [];
+        if (fallbackApps.Count > 0)
+        {
+            fallbackDeployments = await adoCollector.CollectCurrentDeploymentsAsync(
+                fallbackApps, release.Organization, release.Project, mergeCommits, ct);
+
+            foreach (var dep in fallbackDeployments.Where(d => !d.CommitMatched))
+                warnings.Add($"DEP004: Deployment '{dep.ReleaseName}' for '{dep.ApplicationName}' was selected by recency because no artifact commit matched the release PRs. Verify this is the correct deployment.");
+        }
+
+        var deployments = linkedDeployments.Concat(fallbackDeployments).ToList();
 
         if (deployments.Count == 0)
             warnings.Add("No deployment candidates found in Azure DevOps.");

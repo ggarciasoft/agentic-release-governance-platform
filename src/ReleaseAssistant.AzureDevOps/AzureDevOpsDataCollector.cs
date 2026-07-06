@@ -39,19 +39,75 @@ public sealed class AzureDevOpsDataCollector(AzureDevOpsClient client) : IAzureD
 
     public async Task<IReadOnlyList<DeploymentData>> CollectCurrentDeploymentsAsync(
         IReadOnlyList<(string ApplicationName, int ReleaseDefinitionId, string EnvironmentName)> applications,
-        string organization, string project, CancellationToken ct = default)
+        string organization, string project,
+        IReadOnlyCollection<string>? mergeCommits = null,
+        CancellationToken ct = default)
     {
         var deployments = new List<DeploymentData>();
         foreach (var (applicationName, releaseDefinitionId, environmentName) in applications)
         {
             var match = await client.FindLatestEnvironmentDeploymentAsync(
-                releaseDefinitionId, environmentName, organization, project, ct);
+                releaseDefinitionId, environmentName, mergeCommits, organization, project, ct);
             if (match == null) continue;
 
             deployments.Add(MapDeployment(applicationName, match));
         }
 
         return deployments;
+    }
+
+    public async Task<IReadOnlyList<DeploymentData>> CollectDeploymentsFromWorkItemLinksAsync(
+        IReadOnlyList<int> workItemIds,
+        IReadOnlyList<(string ApplicationName, int ReleaseDefinitionId, string EnvironmentName)> applications,
+        string organization, string project,
+        CancellationToken ct = default)
+    {
+        if (workItemIds.Count == 0 || applications.Count == 0)
+            return Array.Empty<DeploymentData>();
+
+        var adoWorkItems = await client.GetWorkItemsByIdsAsync(workItemIds, organization, project, ct);
+
+        var releaseIds = adoWorkItems
+            .SelectMany(w => w.Relations ?? [])
+            .Where(r => r.Rel.Equals("ArtifactLink", StringComparison.OrdinalIgnoreCase))
+            .Select(r => AzureDevOpsClient.ExtractReleaseIdFromArtifactUrl(r.Url))
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (releaseIds.Count == 0)
+            return Array.Empty<DeploymentData>();
+
+        var releases = new List<AdoRelease>();
+        foreach (var rid in releaseIds)
+        {
+            var rel = await client.GetReleaseByIdAsync(rid, organization, project, ct);
+            if (rel != null) releases.Add(rel);
+        }
+
+        var results = new List<DeploymentData>();
+        foreach (var (applicationName, releaseDefinitionId, environmentName) in applications)
+        {
+            // Pick the latest release for this definition across all work items (highest ID = most recent).
+            var latest = releases
+                .Where(r => r.ReleaseDefinition?.Id == releaseDefinitionId)
+                .OrderByDescending(r => r.Id)
+                .FirstOrDefault();
+
+            if (latest == null) continue;
+
+            var env = latest.Environments?.FirstOrDefault(e =>
+                e.Name.Equals(environmentName, StringComparison.OrdinalIgnoreCase));
+            if (env == null) continue;
+
+            var status = env.Status ?? env.DeploySteps?.LastOrDefault()?.Status ?? string.Empty;
+            var completedAt = env.DeploySteps?.LastOrDefault()?.LastModifiedOn;
+            var url = latest.Links?.Web?.Href ?? string.Empty;
+            var envDeployment = new AdoEnvironmentDeployment(latest, env, status, url, completedAt, CommitMatched: true);
+            results.Add(MapDeployment(applicationName, envDeployment));
+        }
+
+        return results;
     }
 
     public async Task<IReadOnlyList<RollbackCandidateData>> CollectRollbackCandidatesAsync(
@@ -105,7 +161,8 @@ public sealed class AzureDevOpsDataCollector(AzureDevOpsClient client) : IAzureD
             pr.ClosedDate,
             pr.Url,
             JsonSerializer.Serialize(pr, JsonOpts),
-            [linkedWorkItemId]);
+            [linkedWorkItemId],
+            MergeCommitId: pr.LastMergeSourceCommit?.CommitId);
 
     private static DeploymentData MapDeployment(string applicationName, AdoEnvironmentDeployment match) =>
         new(
@@ -120,7 +177,8 @@ public sealed class AzureDevOpsDataCollector(AzureDevOpsClient client) : IAzureD
             ApprovalStatus: string.Empty,
             StartedAt: null,
             CompletedAt: match.CompletedAt,
-            JsonSerializer.Serialize(match, JsonOpts));
+            JsonSerializer.Serialize(match, JsonOpts),
+            CommitMatched: match.CommitMatched);
 
     private static RollbackCandidateData MapRollback(string applicationName, AdoEnvironmentDeployment match) =>
         new(

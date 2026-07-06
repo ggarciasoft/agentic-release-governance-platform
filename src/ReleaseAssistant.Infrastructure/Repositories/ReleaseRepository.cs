@@ -276,6 +276,7 @@ public class ReleaseRepository(AppDbContext db) : IReleaseRepository
         existing.CompletedAtFromAzureDevOps = incoming.CompletedAtFromAzureDevOps;
         existing.Url = incoming.Url;
         existing.RawJson = incoming.RawJson;
+        existing.MergeCommitId = incoming.MergeCommitId;
         existing.UpdatedAt = DateTime.UtcNow;
     }
 }

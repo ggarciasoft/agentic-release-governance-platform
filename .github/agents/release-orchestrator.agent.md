@@ -36,7 +36,11 @@ Given a change request, release tag, or release identifier, create or locate the
 3. Use Azure DevOps MCP tools or delegate to the Work Item Agent to find user stories, bugs, features, and tasks.
 4. Attach work items to the release through `release-governance/attach_work_items_to_release`.
 5. Use Azure DevOps MCP tools or delegate to the Pull Request Agent to find PRs.
-6. Attach PRs through `release-governance/attach_pull_requests_to_release`.
+   For each PR, read `lastMergeSourceCommit.commitId` from the Azure DevOps response.
+6. Attach PRs through `release-governance/attach_pull_requests_to_release`, including
+   `mergeCommitId` (the `lastMergeSourceCommit.commitId` for each PR).
+   **Step 6 must complete before step 7.** The server uses the stored merge commits to
+   select the correct pipeline release instead of falling back to the most recent one by date.
 7. Delegate to the Pipeline Agent or call `release-governance/collect_release_deployments`.
 8. Call `release-governance/collect_release_rollback_candidates`.
 9. Call `release-governance/find_rollback_candidates` when you need to read attached rows.

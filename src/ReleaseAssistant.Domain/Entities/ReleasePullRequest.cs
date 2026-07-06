@@ -16,6 +16,7 @@ public class ReleasePullRequest : EntityBase
     public DateTime? CompletedAtFromAzureDevOps { get; set; }
     public string Url { get; set; } = string.Empty;
     public string RawJson { get; set; } = "{}";
+    public string? MergeCommitId { get; set; }
 
     public Release Release { get; set; } = null!;
     public ICollection<ReleasePullRequestWorkItem> WorkItemLinks { get; set; } = new List<ReleasePullRequestWorkItem>();

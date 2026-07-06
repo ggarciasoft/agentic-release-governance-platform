@@ -190,6 +190,11 @@ Stores work items collected by the Azure DevOps MCP server or Azure DevOps integ
 
 Stores pull requests collected by the Azure DevOps MCP server or Azure DevOps integration.
 
+`mergeCommitId` must be set to `lastMergeSourceCommit.commitId` from the Azure DevOps PR
+response. It is used by `collect_release_deployments` to match the correct pipeline release
+to the CR's code, instead of falling back to the most recent release by date.
+**Always attach PRs before calling `collect_release_deployments`.**
+
 ### Input
 
 ```json
@@ -202,7 +207,8 @@ Stores pull requests collected by the Azure DevOps MCP server or Azure DevOps in
       "title": "Payment validation changes",
       "status": "completed",
       "targetBranch": "main",
-      "url": "https://dev.azure.com/..."
+      "url": "https://dev.azure.com/...",
+      "mergeCommitId": "5b9ba1ac3eabcf544082d92cdb01f8db7d26e48d"
     }
   ]
 }

@@ -12,7 +12,8 @@ public record DeploymentData(
     string ApprovalStatus = "",
     DateTime? StartedAt = null,
     DateTime? CompletedAt = null,
-    string RawJson = "{}");
+    string RawJson = "{}",
+    bool CommitMatched = false);
 
 public record AttachDeploymentsRequest(
     string ReleaseId,
