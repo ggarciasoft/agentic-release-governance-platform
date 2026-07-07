@@ -260,3 +260,42 @@ Then connect your agent host following the matching guide:
 For full configuration steps (secrets, Azure DevOps PAT, EF migrations) see
 [`docs/development/getting-started.md`](docs/development/getting-started.md).
 Full phase-by-phase build plan: [MCP-First MVP Roadmap](docs/roadmap/mcp-first-mvp-roadmap.md).
+
+## Contributing
+
+Contributions are welcome — code, docs, agent definitions, and tests.
+
+1. **Fork and clone** the repository, then create a feature branch from `main`.
+2. **Read the docs** — start with [Getting Started](docs/development/getting-started.md),
+   [MCP-First Architecture](docs/architecture/mcp-first-architecture.md), and
+   [Testing Strategy](docs/testing/testing-strategy.md).
+3. **Make your changes** following project conventions:
+   - Keep business logic in application services; keep MCP tools thin.
+   - Use deterministic validation rules; do not invent Azure DevOps data in agents or tests.
+   - Never commit secrets (PATs, tokens, connection strings).
+   - Add unit tests for validation rules and document generation when you change that logic.
+4. **Verify locally:**
+
+   ```bash
+   dotnet restore && dotnet build && dotnet test
+   ```
+
+5. **Open a pull request** with a clear description of what changed and why. Link any related
+   issues or work items if applicable.
+
+**Good first areas to contribute:**
+
+- Backend API and application services (`src/ReleaseAssistant.*`)
+- `release-governance` MCP tools and contracts (`src/ReleaseAssistant.McpServer`, `docs/mcp/`)
+- Agent role definitions for [Copilot](docs/hosts/github-copilot.md), [Cursor](docs/hosts/cursor.md),
+  or [Claude](docs/hosts/claude.md)
+- Documentation fixes and examples in `docs/`
+
+By contributing, you agree that your contributions are licensed under the
+[Apache License 2.0](LICENSE).
+
+## Support
+
+If this project helps your team, consider sponsoring ongoing development:
+
+**[Sponsor on GitHub](https://github.com/sponsors/ggarciasoft)**
